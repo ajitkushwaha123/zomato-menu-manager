@@ -1,0 +1,40 @@
+{
+    "category": {
+        "categoryId": "56782989",
+        "tempReferenceId": "",
+        "resId": "22334194",
+        "name": "Pizza",
+        "order": 1,
+        "hasTiming": false
+    },
+    "timings": [],
+    "timingsV2": [],
+    "subCategoryWrappers": [
+        {
+            "subCategory": {
+                "subCategoryId": "81885689",
+                "name": "Pizza",
+                "order": 1,
+                "categoryId": "56782989",
+                "tempReferenceId": ""
+            },
+            "subCategoryEntities": [
+                {
+                    "id": "900733016",
+                    "subCategoryId": "81885689",
+                    "entityType": "catalogue",
+                    "entityId": "754166453",
+                    "order": 1
+                }
+            ]
+        }
+    ],
+    "categoryServices": [
+        {
+            "categoryId": "56782989",
+            "service": "DELIVERY",
+            "status": "ENABLED",
+            "id": "149484288"
+        }
+    ]
+}

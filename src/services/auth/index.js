@@ -1,0 +1,29 @@
+import api from "@/lib/api/axios";
+import { API_ENDPOINTS } from "../api-endpoints";
+
+export const AuthService = {
+    async getProfile() {
+        try {
+            const { data } = await api.get(API_ENDPOINTS.AUTH.PROFILE);
+            return data?.data;
+        } catch (err) {
+            throw new Error(
+                err.response?.data?.message ||
+                err.message ||
+                "Something went wrong."
+            );
+        }
+    },
+    async getAllRestaurant() {
+        try {
+            const { data } = await api.get(API_ENDPOINTS.AUTH.RESTAURANTS);
+            return data?.data;
+        } catch (err) {
+            throw new Error(
+                err.response?.data?.message ||
+                err.message ||
+                "Something went wrong."
+            );
+        }
+    },
+};
