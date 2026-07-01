@@ -27,14 +27,14 @@ export default function DescriptionEditor({ allItems, updateItem }) {
             }
 
             notification.success(`Successfully generated ${data.updated_items || 0} descriptions!`, {
-                duration: 4000,
+                duration: 5000,
             });
             getMenuByResId(activeResId);
         } catch (error) {
             console.error("Generate description error:", error);
             const errMsg = error.response?.data?.message || error.message || "Something went wrong while generating descriptions.";
             notification.error(errMsg, {
-                duration: 4000
+                duration: 5000
             });
         } finally {
             setIsGenerating(false);

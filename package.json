@@ -6,11 +6,12 @@
   "scripts": {
     "next:dev": "next dev --webpack",
     "dev": "npm run next:dev",
+    "start:worker": "node ./src/lib/bullmq/worker/menu-parser.js",
     "dev:electron": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
-    "build:next": "next build",
-    "build:electron:mac": "electron-builder --mac",
-    "build:electron:win": "electron-builder --win",
-    "build:electron:all": "electron-builder --mac --win"
+    "build:next": "next build && node scripts/prepare-standalone.js",
+    "build:electron:mac": "npm run build:next && electron-builder --mac --arm64 --x64",
+    "build:electron:win": "npm run build:next && electron-builder --win",
+    "build:electron:all": "npm run build:next && electron-builder --mac --arm64 --x64 --win"
   },
   "build": {
     "appId": "in.magicscale.menufy",
@@ -31,7 +32,7 @@
       "target": "nsis"
     },
     "mac": {
-      "target": "dir",
+      "target": "dmg",
       "hardenedRuntime": true,
       "gatekeeperAssess": false
     }
@@ -92,6 +93,7 @@
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^2.4.5",
     "pdf2pic": "^3.2.0",
+    "pdfjs-dist": "^6.1.200",
     "postcss": "^8.5.15",
     "radix-ui": "^1.6.0",
     "react": "19.2.0",

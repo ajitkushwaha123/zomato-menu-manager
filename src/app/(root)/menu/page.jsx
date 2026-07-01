@@ -4,7 +4,7 @@ import CategorySidebar from "@/components/global/menu/category-sidebar";
 import { MenuEditorHeader } from "@/components/global/menu/header";
 import { useMenu } from "@/store/hooks/useMenu";
 import useNotification from "@/store/hooks/useNotification";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import MenuItemList from "@/components/global/menu/item-view/menu-item-list";
 import BulkEditorRouter from "@/components/global/menu/bulk-editor-router";
@@ -65,7 +65,9 @@ const MenuPage = () => {
                 )}
             </div>
             
-            <ImageSidebar />
+            <Suspense fallback={null}>
+                <ImageSidebar />
+            </Suspense>
         </div>
     );
 };

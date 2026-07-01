@@ -26,7 +26,7 @@ export async function apiClient({
     ...headers,
   };
 
-  if (!(data instanceof FormData)) {
+  if (!(data instanceof FormData) && !headers["content-type"] && !headers["Content-Type"]) {
     finalHeaders["Content-Type"] =
       contentType === "form"
         ? "application/x-www-form-urlencoded"

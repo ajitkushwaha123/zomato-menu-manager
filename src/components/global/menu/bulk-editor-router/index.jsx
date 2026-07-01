@@ -3,6 +3,7 @@ import AllItemsList from "../item-view/all-items-list";
 import PriceEditor from "./views/PriceEditor";
 import DescriptionEditor from "./views/DescriptionEditor";
 import ImageEditor from "./views/ImageEditor";
+import UploadMenuEditor from "./views/UploadMenuEditor";
 
 export default function BulkEditorRouter({ 
     activeBulkMode, 
@@ -32,6 +33,8 @@ export default function BulkEditorRouter({
             return <DescriptionEditor allItems={allItems} updateItem={updateItem} />;
         case "IMAGE":
             return <ImageEditor allItems={allItems} updateItem={updateItem} />;
+        case "UPLOAD":
+            return <UploadMenuEditor />;
         case "FULL":
         default:
             return (

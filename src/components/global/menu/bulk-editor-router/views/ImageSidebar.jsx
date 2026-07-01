@@ -54,7 +54,7 @@ export default function ImageSidebar() {
             }
 
             const res = await axios.get(
-                `/api/image/search?q=${encodeURIComponent(query)}&page=${pageNum}&limit=12`,
+                `/api/image/search?q=${encodeURIComponent(query)}&page=${pageNum}&limit=48`,
             );
 
             if (res.data.success) {

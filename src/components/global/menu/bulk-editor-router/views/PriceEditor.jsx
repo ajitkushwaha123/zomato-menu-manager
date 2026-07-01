@@ -30,7 +30,7 @@ export default function PriceEditor({ allItems, updateItem }) {
 
     const submitBulkUpdate = async () => {
         if (!bulkValue || isNaN(Number(bulkValue)) || Number(bulkValue) <= 0) {
-            notification.error("Please enter a valid positive number for the value.");
+            notification.error("Please enter a valid positive number for the value.", { duration: 5000 });
             return;
         }
 
@@ -50,7 +50,7 @@ export default function PriceEditor({ allItems, updateItem }) {
                 throw new Error(data.message || "Failed to bulk update prices");
             }
 
-            notification.success(`Successfully updated ${data.updated_items || 0} items/variants!`);
+            notification.success(`Successfully updated ${data.updated_items || 0} items/variants!`, { duration: 5000 });
             setBulkUpdateOpen(false);
             setBulkValue("");
             // Refresh data from server to show updated prices
@@ -58,7 +58,7 @@ export default function PriceEditor({ allItems, updateItem }) {
         } catch (error) {
             console.error("Bulk update error:", error);
             const errMsg = error.response?.data?.message || error.message || "Something went wrong during bulk update.";
-            notification.error(errMsg);
+            notification.error(errMsg, { duration: 5000 });
         } finally {
             setIsSubmittingBulk(false);
         }
@@ -93,7 +93,7 @@ export default function PriceEditor({ allItems, updateItem }) {
 
     const addVariantGroup = (itemId, itemVariants) => {
         if (itemVariants && itemVariants.length >= 1) {
-            notification.error("Only a single variant property is allowed.");
+            notification.error("Only a single variant property is allowed.", { duration: 5000 });
             return;
         }
 

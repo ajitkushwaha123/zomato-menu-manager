@@ -53,7 +53,7 @@ export default function MenuItemRow({
 
     const addVariantGroup = () => {
         if (variants && variants.length >= 1) {
-            notification.error("Only a single variant property is allowed.");
+            notification.error("Only a single variant property is allowed.", { duration: 5000 });
             return;
         }
         const newGroup = {
@@ -113,7 +113,7 @@ export default function MenuItemRow({
 
     const addSuggestedVariant = (suggestion) => {
         if (variants && variants.length >= 1) {
-            notification.error("Only a single variant property is allowed.");
+            notification.error("Only a single variant property is allowed.", { duration: 5000 });
             return;
         }
         const newGroup = {

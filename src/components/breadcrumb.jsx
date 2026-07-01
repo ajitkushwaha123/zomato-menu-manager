@@ -11,7 +11,7 @@ export function Breadcrumbs() {
   console.log("segments", segments);
 
   return (
-    <nav className="flex items-center gap-1 text-sm text-muted-foreground">
+    <nav className="flex items-center gap-1 text-sm text-muted-foreground no-drag">
       <Link href="/" className="hover:text-foreground">
         Home
       </Link>

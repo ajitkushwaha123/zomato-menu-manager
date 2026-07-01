@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useMenu } from "@/store/hooks/useMenu";
 import { useMemo, useState, useEffect } from "react";
 import InlineInput from "@/components/ui/inline-input";
-import { Plus, Layers, Settings2, DollarSign, AlignLeft, Image as ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Layers, Settings2, DollarSign, AlignLeft, Image as ImageIcon, ChevronLeft, ChevronRight, FileUp } from "lucide-react";
 import CategoryCard from "./category-card";
 
 export default function CategorySidebar() {
@@ -178,6 +178,13 @@ export default function CategorySidebar() {
                                     }`}
                             >
                                 <ImageIcon className="w-4 h-4" /> Image Editor
+                            </button>
+                            <button
+                                onClick={() => setActiveBulkMode("UPLOAD")}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${activeBulkMode === "UPLOAD" ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-100"
+                                    }`}
+                            >
+                                <FileUp className="w-4 h-4" /> Upload Menu
                             </button>
                         </div>
                     )}
