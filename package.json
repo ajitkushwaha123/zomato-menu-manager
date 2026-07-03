@@ -5,7 +5,7 @@
   "main": "electron/main.js",
   "scripts": {
     "next:dev": "next dev --webpack",
-    "dev": "npm run next:dev",
+    "dev": "concurrently \"npm run next:dev\" \"node bull-server/dashboard.js\"",
     "start:worker": "node ./src/lib/bullmq/worker/menu-parser.js",
     "dev:electron": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
     "build:next": "next build && node scripts/prepare-standalone.js",

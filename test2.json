@@ -1,74 +1,56 @@
-"menu": [
+/** 
+* Paste one or more documents here
+*/
+{
+  "resId": "22646659",
+  "platform": "zomato",
+  "menu": [
     {
-      "id": "temp-abfbfbde-d343-46e2-a57f-6309605c914d",
-      "name": "Main Course",
+      "id": "temp-fb65f56d-5e23-428a-a604-9d4fb1642e5e",
+      "name": "Shakes",
       "sub_category": [
         {
-          "id": "temp-d182a4fe-85af-49b1-9e49-6fa5401a306f",
-          "name": "Main Course",
+          "id": "temp-f77ed6f3-9d1f-496f-b00f-978ad5afab8f",
+          "name": "Shakes",
           "items": [
             {
-              "name": "Paneer Butter Masala",
-              "price": 200,
-              "description": "Special Paneer Butter Masala",
+              "name": "Banana Shake",
+              "price": 60,
+              "description": "",
               "is_veg": "VEG",
               "is_available": true,
               "variants": [
                 {
-                  "property_name": "Quantity",
-                  "property_id": "temp-81a7d8a0-788e-490f-9e00-c75f00fd323a",
+                  "property_name": "Size",
+                  "property_id": "temp-ef9957e6-e877-4f93-9837-592c79bdf6af",
                   "options": [
                     {
-                      "option_name": "Half",
-                      "price": 200,
+                      "option_name": "Small",
+                      "price": 60,
                       "is_default": false,
-                      "option_id": "temp-3ed3d10e-16bb-41e5-a9d5-1b8fd1a9d6bc"
+                      "option_id": "temp-9a53248e-f5ae-41f2-9d6e-eb0f968b5e53"
                     },
                     {
-                      "option_name": "Full",
-                      "price": 340,
+                      "option_name": "Medium",
+                      "price": 120,
                       "is_default": false,
-                      "option_id": "temp-ed270f5e-4e3c-4338-ab34-7a1dd9da6040"
+                      "option_id": "temp-68a185d6-290b-4c24-a7f7-227031801e12"
                     }
                   ]
                 }
               ],
-              "id": "temp-bfd65f1b-30dc-4514-95f3-4d5a1933577b",
-              "media": [
-                {
-                  "tempReferenceId": "temp-848EC9DBFDD44AA3A46677129BD351E3",
-                  "mediaType": "PHOTO",
-                  "mediaId": "2a699671753e1ab4f3fc2ff561b954c4.jpg",
-                  "order": 1,
-                  "usageType": "FOODSHOT",
-                  "entityType": "CATALOGUE",
-                  "url": "https://b.zmtcdn.com/data/dish_photos/4c4/2a699671753e1ab4f3fc2ff561b954c4.jpg",
-                  "thumbUrl": "https://b.zmtcdn.com/data/dish_photos/4c4/2a699671753e1ab4f3fc2ff561b954c4.jpg?fit=around%7C200%3A200&crop=200%3A200%3B%2A%2C%2A",
-                  "fileDirectory": "data/dish_photos/4c4/",
-                  "source": "MS_MENU_TOOL",
-                  "fileName": "2a699671753e1ab4f3fc2ff561b954c4.jpg",
-                  "mediaTags": [
-                    {
-                      "tagSlug": "uid_media"
-                    }
-                  ],
-                  "usageTypeEnum": "USAGE_TYPE_FOODSHOT",
-                  "isNewlyUploaded": true,
-                  "metadata": {
-                    "dimensions": {
-                      "width": 1715,
-                      "height": 1200
-                    }
-                  },
-                  "isStockPhoto": false,
-                  "isZoomed": false,
-                  "isLowScore": false,
-                  "isUploading": false
-                }
-              ]
+              "id": "temp-bb1e3e22-63a8-4e32-8eba-8aee69a20428"
             }
           ]
         }
       ]
     }
   ],
+  "createdAt": {
+    "$date": "2026-07-03T07:52:55.653Z"
+  },
+  "updatedAt": {
+    "$date": "2026-07-03T11:13:44.707Z"
+  },
+  "__v": 1
+}

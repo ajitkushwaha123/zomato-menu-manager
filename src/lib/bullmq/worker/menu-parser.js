@@ -22,7 +22,9 @@ const worker = new Worker(
         console.log(`[Job ${job.id}] 🚀 Processing restaurant ${job.data.resId}`);
 
         const payload = job.data;
-        const apiToCall = `/api/menu/${job.data.resId}/bulk-editor/document-parser/analyze`;
+        console.log(`[Job ${job.id}] Payload:`, JSON.stringify(job.data));
+        const stage = job.data.stage || "menu-analyser/raw";
+        const apiToCall = `/api/menu/${job.data.resId}/bulk-editor/document-parser/${stage}`;
 
         const fullUrl = `${process.env.NEXT_PUBLIC_BASE_URL}${apiToCall}`;
         console.log(`[Job ${job.id}] Calling: ${fullUrl}`);

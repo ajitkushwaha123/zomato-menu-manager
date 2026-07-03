@@ -31,6 +31,10 @@ const DocumentSchema = new mongoose.Schema(
                 processedAt: Date,
             },
         ],
+        
+        parsedData: mongoose.Schema.Types.Mixed,
+        enrichedData: mongoose.Schema.Types.Mixed,
+        normalizedData: mongoose.Schema.Types.Mixed,
     },
     {
         timestamps: true,

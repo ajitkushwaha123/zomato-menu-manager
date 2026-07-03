@@ -198,7 +198,7 @@ export async function GET(req, { params }) {
             { new: true, upsert: true }
         );
 
-
+        console.log("savedMenu", savedMenu)
         return NextResponse.json(
             {
                 success: true,

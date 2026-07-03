@@ -1,120 +1,152 @@
-{
-    "result": {
-        "menuEntityTaxes": [
-            {
-                "entityType": "CATALOGUE",
-                "tempReferenceId": "d15a6eb9-44d5-48cc-ba94-91f40be45155",
-                "taxGroupIds": [
-                    1
-                ],
-                "entityTaxes": []
-            }
-        ],
-        "menuEntityCharges": [],
-        "categoryWrappers": [
-            {
-                "category": {
-                    "categoryId": "",
-                    "tempReferenceId": "6653af17-1393-4fd3-9a1a-ffa2501bac87",
-                    "resId": "21047451",
-                    "name": "Meals",
-                    "order": 1,
-                    "hasTiming": false
-                },
-                "timings": [],
-                "timingsV2": [],
-                "subCategoryWrappers": [
-                    {
-                        "subCategory": {
-                            "subCategoryId": "",
-                            "categoryId": "",
-                            "tempReferenceId": "f0994358-ddc0-4fee-9b17-05c389918db3",
-                            "name": "Meals",
-                            "order": 1
-                        },
-                        "subCategoryEntities": [
-                            {
-                                "id": "",
-                                "subCategoryId": "",
-                                "entityType": "catalogue",
-                                "entityId": "",
-                                "order": 1,
-                                "tempReferenceId": "d15a6eb9-44d5-48cc-ba94-91f40be45155"
-                            }
-                        ]
-                    }
-                ],
-                "categoryServices": [
-                    {
-                        "categoryId": "",
-                        "service": "DELIVERY",
-                        "status": "ENABLED"
-                    }
-                ]
-            }
-        ],
-        "catalogueWrappers": [
-            {
-                "catalogue": {
-                    "tempReferenceId": "d15a6eb9-44d5-48cc-ba94-91f40be45155",
-                    "resId": "21047451",
-                    "name": "Kadi with 4 Desi Ghee Roti",
-                    "hasProperties": false,
-                    "isVisible": true,
-                    "media": [
+"normalizedData": {
+    "category": [
+        {
+            "name": "Shakes",
+            "sub_category": [
+                {
+                    "name": "Fruit Shakes",
+                    "items": [
                         {
-                            "id": "temp-618420a3-248f-40a8-a57d-38ba0d50bc65",
-                            "mediaType": "PHOTO",
-                            "mediaId": "b7eceed82855d6825dc8d7291911b1f8.jpeg",
-                            "order": 1,
-                            "usageType": "FOODSHOT",
-                            "entityType": "CATALOGUE",
-                            "entityId": "788101700",
-                            "url": "https://b.zmtcdn.com/data/dish_photos/1f8/b7eceed82855d6825dc8d7291911b1f8.jpeg",
-                            "thumbUrl": "https://b.zmtcdn.com/data/dish_photos/1f8/b7eceed82855d6825dc8d7291911b1f8.jpeg?fit=around%7C200%3A200&crop=200%3A200%3B%2A%2C%2A",
-                            "fileDirectory": "data/dish_photos/1f8/",
-                            "source": "MS_MENU_TOOL",
-                            "fileName": "b7eceed82855d6825dc8d7291911b1f8.jpeg",
-                            "usageTypeEnum": "USAGE_TYPE_FOODSHOT"
-                        }
-                    ],
-                    "templateType": "TT_DEFAULT",
-                    "onHoldStatus": 1,
-                    "description": "Tangy yogurt based kadhi served with four soft rotis for a wholesome meal.",
-                    "isRefrigerationRequired": false
-                },
-                "catalogueTags": [
-                    "veg",
-                    "services"
-                ],
-                "cataloguePropertyWrappers": [],
-                "variantWrappers": [
-                    {
-                        "variant": {
-                            "tempReferenceId": "6H1M1ZLJDPZWBY126QIKVAGSTUNVXE6F"
+                            "id": "1",
+                            "name": "Banana Shake",
+                            "category": "SHAKES",
+                            "base_price": 70,
+                            "variants": [
+                                {
+                                    "property_name": "Size",
+                                    "options": [
+                                        {
+                                            "option_name": "M",
+                                            "price": 70
+                                        },
+                                        {
+                                            "option_name": "L",
+                                            "price": 100
+                                        }
+                                    ]
+                                }
+                            ],
+                            "is_veg": "VEG",
+                            "meatTypes": []
                         },
-                        "variantModifierGroupMaps": [],
-                        "variantPrices": [
-                            {
-                                "isVisible": true,
-                                "service": "delivery",
-                                "tempReferenceId": "09NEO78VC9PZNJJBPR6GLDWC7ISA5UNE",
-                                "price": 200
-                            }
-                        ]
-                    }
-                ],
-                "mapModifierGroupOrder": {}
-            }
-        ],
-        "modifierGroupWrappers": [],
-        "resDisclaimers": [],
-        "requestedModerationData": {
-            "variantPrices": []
-        },
-        "contentCombos": [],
-        "disclaimers": [],
-        "resId": "21047451",
-        "requestMetadata": {}
-    }
+                        {
+                            "id": "2",
+                            "name": "Mango Shake",
+                            "category": "SHAKES",
+                            "base_price": 70,
+                            "variants": [
+                                {
+                                    "property_name": "Size",
+                                    "options": [
+                                        {
+                                            "option_name": "M",
+                                            "price": 70
+                                        },
+                                        {
+                                            "option_name": "L",
+                                            "price": 100
+                                        }
+                                    ]
+                                }
+                            ],
+                            "is_veg": "VEG",
+                            "meatTypes": []
+                        },
+                        {
+                            "id": "4",
+                            "name": "Strawberry Shake",
+                            "category": "SHAKES",
+                            "base_price": 110,
+                            "variants": [
+                                {
+                                    "property_name": "Size",
+                                    "options": [
+                                        {
+                                            "option_name": "M",
+                                            "price": 110
+                                        },
+                                        {
+                                            "option_name": "L",
+                                            "price": 130
+                                        }
+                                    ]
+                                }
+                            ],
+                            "is_veg": "VEG",
+                            "meatTypes": []
+                        },
+                        {
+                            "id": "7",
+                            "name": "Black Currant Shake",
+                            "category": "SHAKES",
+                            "base_price": 120,
+                            "variants": [
+                                {
+                                    "property_name": "Size",
+                                    "options": [
+                                        {
+                                            "option_name": "M",
+                                            "price": 120
+                                        },
+                                        {
+                                            "option_name": "L",
+                                            "price": 150
+                                        }
+                                    ]
+                                }
+                            ],
+                            "is_veg": "VEG",
+                            "meatTypes": []
+                        },
+                        {
+                            "id": "9",
+                            "name": "Honey Banana Shake",
+                            "category": "SHAKES",
+                            "base_price": 120,
+                            "variants": [
+                                {
+                                    "property_name": "Size",
+                                    "options": [
+                                        {
+                                            "option_name": "M",
+                                            "price": 120
+                                        },
+                                        {
+                                            "option_name": "L",
+                                            "price": 150
+                                        }
+                                    ]
+                                }
+                            ],
+                            "is_veg": "VEG",
+                            "meatTypes": []
+                        },
+                        {
+                            "id": "10",
+                            "name": "Kit Kat Shake",
+                            "category": "SHAKES",
+                            "base_price": 100,
+                            "variants": [
+                                {
+                                    "property_name": "Size",
+                                    "options": [
+                                        {
+                                            "option_name": "M",
+                                            "price": 100
+                                        },
+                                        {
+                                            "option_name": "L",
+                                            "price": 120
+                                        }
+                                    ]
+                                }
+                            ],
+                            "is_veg": "VEG",
+                            "meatTypes": []
+                        }
+                    ]
+                },
+            ]
+        }
+    ]
 }

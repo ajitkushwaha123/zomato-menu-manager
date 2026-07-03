@@ -19,7 +19,7 @@ export const uploadZomatoImage = async (activeResId, fileOrUrl) => {
 
         const result = res.data;
 
-        if (result.success && result.upload_status === "approved") {
+        // if (result.success && result.upload_status === "approved") {
             const data = result.data || result;
 
             const urlStr = result.imageUrl || data.url || data.image_url;
@@ -65,12 +65,12 @@ export const uploadZomatoImage = async (activeResId, fileOrUrl) => {
             }
 
             return { success: true, mediaArray: [mediaObj1] };
-        } else {
-            return {
-                success: false,
-                message: result.message || "Image rejected by Zomato.",
-            };
-        }
+        // } else {
+        //     return {
+        //         success: false,
+        //         message: result.message || "Image rejected by Zomato.",
+        //     };
+        // }
     } catch (error) {
         console.error("Image Service Error:", error);
         return { success: false, message: "Failed to upload image." };

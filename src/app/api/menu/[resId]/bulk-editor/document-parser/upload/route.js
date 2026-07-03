@@ -8,7 +8,7 @@ export async function POST(req, { params }) {
     try {
         await dbConnect();
         const { resId } = await params;
-        
+
         if (!resId) {
             return NextResponse.json({ success: false, message: "resId is required" }, { status: 400 });
         }
@@ -23,18 +23,13 @@ export async function POST(req, { params }) {
         let pageCount = 0;
         const uploadPromises = [];
 
-        // Pre-create the document in DB
-        const document = await Document.findOneAndUpdate(
-            { resId },
-            { 
-                resId, 
-                status: "processing", 
-                totalPages: 0, 
-                processedPages: 0, 
-                pages: [] 
-            },
-            { upsert: true, new: true }
-        );
+        const document = await Document.create({
+            resId,
+            status: "processing",
+            totalPages: 0,
+            processedPages: 0,
+            pages: []
+        });
 
         for (const file of files) {
             const buffer = Buffer.from(await file.arrayBuffer());
@@ -47,9 +42,8 @@ export async function POST(req, { params }) {
                 if (mimeType.includes("png")) extension = "png";
                 else if (mimeType.includes("jpeg")) extension = "jpg";
                 else if (mimeType.includes("webp")) extension = "webp";
-                
+
                 const currentPage = pageCount;
-                // Upload image to S3
                 const uploadPromise = uploadToS3({
                     file: buffer,
                     folder: `menus/${resId}/pages`,
@@ -62,10 +56,8 @@ export async function POST(req, { params }) {
             }
         }
 
-        // Wait for all S3 uploads
         const uploadedPages = await Promise.all(uploadPromises);
-        
-        // Push pages to Document model
+
         document.totalPages = uploadedPages.length;
         document.pages = uploadedPages.map(p => ({
             pageNumber: p.pageNumber,
@@ -74,12 +66,13 @@ export async function POST(req, { params }) {
         }));
         await document.save();
 
-        // Queue bullmq jobs
-        for (const page of uploadedPages) {
+        if (uploadedPages.length > 0) {
+            const firstPage = uploadedPages[0];
             await menuParserJob({
+                _id: document?._id,
                 resId,
-                pageNumber: page.pageNumber,
-                pdfUrl: page.pdfUrl,
+                pageNumber: firstPage.pageNumber,
+                pdfUrl: firstPage.pdfUrl,
                 percentage: 0
             });
         }
