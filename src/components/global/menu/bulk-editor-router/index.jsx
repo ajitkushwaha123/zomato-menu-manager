@@ -5,6 +5,7 @@ import DescriptionEditor from "./views/DescriptionEditor";
 import ImageEditor from "./views/ImageEditor";
 import UploadMenuEditor from "./views/UploadMenuEditor";
 import TransferMenuEditor from "./views/TransferMenuEditor";
+import ExportImagesEditor from "./views/ExportImagesEditor";
 
 export default function BulkEditorRouter({ 
     activeBulkMode, 
@@ -38,6 +39,8 @@ export default function BulkEditorRouter({
             return <UploadMenuEditor />;
         case "TRANSFER":
             return <TransferMenuEditor />;
+        case "EXPORT_IMAGES":
+            return <ExportImagesEditor allItems={allItems} />;
         case "FULL":
         default:
             return (
