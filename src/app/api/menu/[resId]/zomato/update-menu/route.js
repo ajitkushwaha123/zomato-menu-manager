@@ -92,19 +92,19 @@ export async function POST(req, { params }) {
             menuVersion,
             last_opened_catalogue: menu?.last_opened_catalogue || {},
             onHoldItems: menu?.onHoldItems || {},
-            update_menu: buildZomatoMenuPayload(menu?.menuResponse, resMenu?.menu || []),
+            update_menu: buildZomatoMenuPayload(menu?.menuResponse, resMenu?.menu || [], resMenu?.addons || []),
             menu: menu?.menuResponse
         }
 
-        // return NextResponse.json(
-        //     {
-        //         success: true,
-        //         message: "Menu updated successfully",
-        //         result: payload?.update_menu,
-        //         data: menu,
-        //     },
-        //     { status: 200 }
-        // );
+        return NextResponse.json(
+            {
+                success: true,
+                message: "Menu updated successfully",
+                result: payload?.update_menu,
+                data: menu,
+            },
+            { status: 200 }
+        );
 
         const updatedMenu = await apiClient({
             req,

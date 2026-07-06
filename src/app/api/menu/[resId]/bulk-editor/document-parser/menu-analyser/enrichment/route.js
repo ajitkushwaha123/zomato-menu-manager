@@ -53,7 +53,18 @@ export async function POST(req) {
             };
         });
 
-        doc.enrichedData = { items: mergedData };
+        // Deduplicate mergedData based on item name (case-insensitive)
+        const seenNames = new Set();
+        const uniqueMergedData = [];
+        for (const item of mergedData) {
+            const nameKey = (item.name || "").toLowerCase().trim();
+            if (!seenNames.has(nameKey)) {
+                seenNames.add(nameKey);
+                uniqueMergedData.push(item);
+            }
+        }
+
+        doc.enrichedData = { items: uniqueMergedData };
         doc.status = "enrichment_complete";
         await doc.save();
 

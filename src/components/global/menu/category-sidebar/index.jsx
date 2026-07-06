@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useMenu } from "@/store/hooks/useMenu";
 import { useMemo, useState, useEffect } from "react";
 import InlineInput from "@/components/ui/inline-input";
-import { Plus, Layers, Settings2, DollarSign, AlignLeft, Image as ImageIcon, ChevronLeft, ChevronRight, FileUp, Share, Cloud } from "lucide-react";
+import { Plus, Layers, Settings2, DollarSign, AlignLeft, Image as ImageIcon, ChevronLeft, ChevronRight, FileUp, Share , Cloud , PlusCircle, AlertTriangle } from "lucide-react";
 import CategoryCard from "./category-card";
 
 export default function CategorySidebar() {
@@ -164,6 +164,27 @@ export default function CategorySidebar() {
                                     }`}
                             >
                                 <DollarSign className="w-4 h-4" /> Price Editor
+                            </button>
+                            <button
+                                onClick={() => setActiveBulkMode("STRUCTURE")}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${activeBulkMode === "STRUCTURE" ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-100"
+                                    }`}
+                            >
+                                <Layers className="w-4 h-4" /> Structure Organizer
+                            </button>
+                            <button
+                                onClick={() => setActiveBulkMode("ADDONS")}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${activeBulkMode === "ADDONS" ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-100"
+                                    }`}
+                            >
+                                <PlusCircle className="w-4 h-4" /> Addons Builder
+                            </button>
+                            <button
+                                onClick={() => setActiveBulkMode("HOLD_ITEMS")}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${activeBulkMode === "HOLD_ITEMS" ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-100"
+                                    }`}
+                            >
+                                <AlertTriangle className="w-4 h-4 text-amber-500" /> Hold Items
                             </button>
                             <button
                                 onClick={() => setActiveBulkMode("DESCRIPTION")}

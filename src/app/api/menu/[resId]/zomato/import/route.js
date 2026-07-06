@@ -92,15 +92,18 @@ const parseItemVariants = (catalogueWrapper) => {
         .filter(Boolean);
 };
 
-const buildItem = (catalogueWrapper) => {
+const buildItem = (catalogueWrapper, onHoldItems = {}) => {
     const catalogue = catalogueWrapper?.catalogue || {};
     const tags = catalogueWrapper?.catalogueTags || [];
     const { price, min_price, max_price } = getPriceRange(
         catalogueWrapper?.variantWrappers
     );
 
+    const catalogueId = catalogue?.catalogueId || "";
+    const holdData = onHoldItems?.catalogues?.[catalogueId];
+
     return {
-        id: catalogue?.catalogueId || "",
+        id: catalogueId,
         temp_id: catalogue?.tempReferenceId || "",
         name: catalogue?.name || "",
         description: catalogue?.description || "",
@@ -111,16 +114,20 @@ const buildItem = (catalogueWrapper) => {
         packing_charges: 0,
         media: catalogue?.media || [],
         variants: parseItemVariants(catalogueWrapper),
-        meatTypes: catalogue?.meatTypes
+        meatTypes: catalogue?.meatTypes,
+        onHold: !!holdData,
+        holdComments: holdData?.comments || [],
+        addons: [] // Populated later
     };
 };
 
-export const parseZomatoCatalogueMenu = (data) => {
+export const parseZomatoCatalogueMenu = (data, onHoldItems = {}) => {
     const categoryWrappers = data?.categoryWrappers || [];
     const catalogueWrappers = data?.catalogueWrappers || [];
     const catalogueLookup = buildCatalogueLookup(catalogueWrappers);
 
-    return categoryWrappers.map((categoryWrapper) => {
+    // Parse categories and items
+    const parsedMenu = categoryWrappers.map((categoryWrapper) => {
         const category = categoryWrapper?.category || {};
         const subCategoryWrappers = categoryWrapper?.subCategoryWrappers || [];
 
@@ -137,7 +144,7 @@ export const parseZomatoCatalogueMenu = (data) => {
                     .filter((entity) => entity?.entityType === "catalogue")
                     .map((entity) => catalogueLookup.get(entity?.entityId))
                     .filter(Boolean)
-                    .map(buildItem);
+                    .map(cw => buildItem(cw, onHoldItems));
 
                 return {
                     id: subCategory?.subCategoryId || "",
@@ -148,6 +155,91 @@ export const parseZomatoCatalogueMenu = (data) => {
             }),
         };
     });
+
+    // Parse Addons (Modifiers)
+    const modifierGroupWrappers = data?.modifierGroupWrappers || [];
+    const variantLookup = new Map();
+
+    catalogueWrappers.forEach((wrapper) => {
+        wrapper?.variantWrappers?.forEach((vw) => {
+            if (vw?.variant?.variantId) {
+                variantLookup.set(vw.variant.variantId, {
+                    wrapper,
+                    variant: vw
+                });
+            }
+        });
+    });
+
+    const parsedAddons = modifierGroupWrappers
+        .filter(groupWrapper => !groupWrapper?.modifierGroup?.excludeFromGlobal)
+        .map(groupWrapper => {
+            const mg = groupWrapper?.modifierGroup || {};
+
+            // Find options mapped to this group
+            const options = (groupWrapper?.variantModifierGroupMaps || []).map(map => {
+                const vInfo = variantLookup.get(map.variantId);
+                if (!vInfo) return null;
+
+                const cat = vInfo.wrapper.catalogue;
+                const price = getDeliveryPrice(vInfo.variant.variantPrices);
+                const tags = vInfo.wrapper.catalogueTags || [];
+
+                let is_veg = "NONE";
+                if (tags.includes("veg")) is_veg = "VEG";
+                else if (tags.includes("non-veg")) is_veg = "NON_VEG";
+                else if (tags.includes("egg")) is_veg = "EGG";
+
+                return {
+                    id: map.variantId,
+                    catalogue_id: cat?.catalogueId || "",
+                    name: cat?.name || "",
+                    price: price,
+                    is_veg: is_veg,
+                    map_id: map.id
+                };
+            }).filter(Boolean);
+
+            return {
+                id: mg.modifierGroupId,
+                name: mg.name || "",
+                min: mg.min || 0,
+                max: mg.max || 1,
+                is_compulsory: (mg.min || 0) > 0,
+                allow_multiple: mg.maxSelectionsPerItem > 1,
+                max_per_item: mg.maxSelectionsPerItem || 1,
+                options: options
+            };
+        });
+
+    const validAddonIds = new Set(parsedAddons.map(a => a.id));
+
+    // Link addons to base items
+    catalogueWrappers.forEach(wrapper => {
+        const itemAddonIds = new Set();
+
+        wrapper?.variantWrappers?.forEach(vw => {
+            vw?.variantModifierGroupMaps?.forEach(map => {
+                if (map.variantIsParent && map.modifierGroupId && validAddonIds.has(map.modifierGroupId)) {
+                    itemAddonIds.add(map.modifierGroupId);
+                }
+            });
+        });
+
+        if (itemAddonIds.size > 0) {
+            // Find this item in parsedMenu and attach addons
+            parsedMenu.forEach(cat => {
+                cat.sub_category?.forEach(sub => {
+                    const item = sub.items?.find(i => i.id === wrapper.catalogue?.catalogueId);
+                    if (item) {
+                        item.addons = Array.from(itemAddonIds);
+                    }
+                });
+            });
+        }
+    });
+
+    return { parsedMenu, parsedAddons };
 };
 
 export async function GET(req, { params }) {
@@ -191,19 +283,29 @@ export async function GET(req, { params }) {
             result?.data?.menuResponse ??
             null;
 
-        const parsedMenu = parseZomatoCatalogueMenu(menu);
+        const onHoldItems = result?.data?.onHoldItems ?? result?.data?.menuResponse?.onHoldItems ?? {};
+        console.log("onHoldItems", onHoldItems)
+
+        const { parsedMenu, parsedAddons } = parseZomatoCatalogueMenu(menu, onHoldItems);
+
         const savedMenu = await Menu.findOneAndUpdate(
             { resId, platform: "zomato" },
-            { resId, platform: "zomato", menu: parsedMenu, updatedAt: new Date() },
+            {
+                resId,
+                platform: "zomato",
+                menu: parsedMenu,
+                addons: parsedAddons,
+                updatedAt: new Date()
+            },
             { new: true, upsert: true }
         );
 
-        console.log("savedMenu", savedMenu)
         return NextResponse.json(
             {
                 success: true,
                 message: "Menu fetched successfully",
                 data: savedMenu,
+                parsedAddons: parsedAddons
             },
             { status: 200 }
         );

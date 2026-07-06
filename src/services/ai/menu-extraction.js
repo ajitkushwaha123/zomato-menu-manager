@@ -38,8 +38,10 @@ You are a meticulous transcriber. You look at a restaurant menu image/PDF and wr
 `;
 
     const promptText = `
-Transcribe this menu page exactly as it appears, grouped block-by-block the way it's visually laid out on the page (top to bottom, left to right within each block).
+Transcribe this menu page exactly as it appears. If the page layout is split into multiple vertical columns (like a newspaper), read down the entire first column completely before moving to the top of the next column. Group the transcription block-by-block based on these columns so that items in the same category stay together.
  
+
+Smartly make a difference between a category , variant , description and item . do not think category as item or item as category . 
 ==================================================
 OUTPUT FORMAT — FOLLOW EXACTLY
 ==================================================
@@ -680,11 +682,12 @@ Your tasks are:
 
 NAME NORMALIZATION RULES:
 - The final name MUST be concise.
-- The final name MUST NOT exceed 4 words.
+- The final name MUST NOT exceed 4 words unless absolutely necessary to prevent duplicates.
 - Fix any spelling mistakes in the dish name.
 - Remove unnecessary adjectives, marketing words, and descriptions.
 - Keep only the core dish name.
 - Preserve the original meaning.
+- **CRITICAL:** Do NOT rename items in a way that creates duplicates. If normalizing two different items would result in the exact same name, keep enough original context (like size, flavor, or variant keywords) so they remain distinct.
 - Do NOT invent new dishes.
 - Examples:
   - "Delicious Spicy Chicken Biryani with Raita" → "Chicken Biryani"
@@ -754,11 +757,13 @@ You will be given a list of menu items. Each item has an 'id', 'name', and an or
 Your task is to intelligently group these items into a deep hierarchy of Categories and Sub-categories.
 
 STRICT RULES:
-1. Fix Spelling Mistakes if any and make sure title and category , sub_category are strictly in english/highlish only.
-2. You must group similar items into logical "sub_category" under the main "category".
-3. If the original category is too broad, infer a better structure.
-4. You MUST include EVERY item from the input. DO NOT skip any item.
-5. You MUST preserve the exact 'id' integer provided for each item.
+1. Fix Spelling Mistakes if any and make sure title and category, sub_category are strictly in english/hinglish only.
+2. Group items into logical "sub_category" under the main "category".
+3. **CRITICAL:** Do NOT over-categorize. Do NOT create too many unnecessary small subcategories or categories. Keep the menu hierarchy clean and compact.
+4. **CRITICAL:** Do NOT create duplicate categories or subcategories. If categories or subcategories are similar or matching in meaning (e.g., "Veg Starters" and "Vegetarian Starters"), MERGE them into a single category.
+5. If the original category is too broad, infer a better structure, but prefer broader grouping over fragmentation.
+6. You MUST include EVERY item from the input. DO NOT skip any item.
+7. You MUST preserve the exact 'id' integer provided for each item.
 
 You MUST output exactly one JSON object wrapped in \`\`\`json ... \`\`\`
 The JSON must have the following structure:

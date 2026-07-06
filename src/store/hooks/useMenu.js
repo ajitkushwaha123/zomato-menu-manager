@@ -19,6 +19,14 @@ import {
     moveItem as dispatchMoveItem,
     saveMenuByResId as dispatchSaveMenuByResId,
     syncZomatoMenu as dispatchSyncZomatoMenu,
+    addAddonGroup as dispatchAddAddonGroup,
+    updateAddonGroup as dispatchUpdateAddonGroup,
+    deleteAddonGroup as dispatchDeleteAddonGroup,
+    addAddonOption as dispatchAddAddonOption,
+    updateAddonOption as dispatchUpdateAddonOption,
+    deleteAddonOption as dispatchDeleteAddonOption,
+    toggleItemAddon as dispatchToggleItemAddon,
+    bulkToggleAddon as dispatchBulkToggleAddon,
 } from '../slice/menuSlice';
 
 export const useMenu = () => {
@@ -26,6 +34,7 @@ export const useMenu = () => {
 
     const {
         menuData,
+        addonsData,
         restaurantName,
         activeResId,
         activeView,
@@ -80,6 +89,7 @@ export const useMenu = () => {
     return {
         // Data States
         menuData,
+        addonsData,
         restaurantName,
         activeResId,
         activeView,
@@ -107,13 +117,43 @@ export const useMenu = () => {
         deleteSubCategory,
 
         // Item Modifiers
-        addItem: useCallback((payload) => dispatch(dispatchAddItem(payload)), [dispatch]),
-        updateItem: useCallback((payload) => dispatch(dispatchUpdateItem(payload)), [dispatch]),
-        deleteItem: useCallback((payload) => dispatch(dispatchDeleteItem(payload)), [dispatch]),
-        moveItem: useCallback((payload) => dispatch(dispatchMoveItem(payload)), [dispatch]),
+        addItem: (payload) => {
+            if (payload && payload.subCategoryId && payload.item) {
+                return dispatch(dispatchAddItem(payload));
+            }
+            // fallback for legacy calls
+            return dispatch(dispatchAddItem({ subCategoryId: arguments[0], item: { name: arguments[1], price: arguments[2] } }));
+        },
+        updateItem: (itemIdOrPayload, data) => {
+            if (typeof itemIdOrPayload === 'object' && itemIdOrPayload !== null && 'itemId' in itemIdOrPayload) {
+                return dispatch(dispatchUpdateItem({
+                    itemId: itemIdOrPayload.itemId,
+                    updates: itemIdOrPayload.updates || itemIdOrPayload.data
+                }));
+            }
+            return dispatch(dispatchUpdateItem({ itemId: itemIdOrPayload, updates: data }));
+        },
+        deleteItem: (itemId) => {
+            if (typeof itemId === 'object' && itemId !== null && 'itemId' in itemId) {
+                return dispatch(dispatchDeleteItem(itemId));
+            }
+            return dispatch(dispatchDeleteItem({ itemId }));
+        },
+        moveItem: (itemId, targetSubCategoryId) => dispatch(dispatchMoveItem({ itemId, targetSubCategoryId })),
+        
+        // Addon Modifiers
+        addAddonGroup: (id, name, min, max) => dispatch(dispatchAddAddonGroup({ id, name, min, max })),
+        updateAddonGroup: (addonId, data) => dispatch(dispatchUpdateAddonGroup({ addonId, data })),
+        deleteAddonGroup: (addonId) => dispatch(dispatchDeleteAddonGroup(addonId)),
+        addAddonOption: (addonId, option) => dispatch(dispatchAddAddonOption({ addonId, option })),
+        updateAddonOption: (addonId, optionId, data) => dispatch(dispatchUpdateAddonOption({ addonId, optionId, data })),
+        deleteAddonOption: (addonId, optionId) => dispatch(dispatchDeleteAddonOption({ addonId, optionId })),
+        toggleItemAddon: (itemId, addonId) => dispatch(dispatchToggleItemAddon({ itemId, addonId })),
+        bulkToggleAddon: (addonId, itemIds, isAttaching) => dispatch(dispatchBulkToggleAddon({ addonId, itemIds, isAttaching })),
 
+        // Data operations
         getMenuByResId,
-        saveMenuByResId: useCallback(() => dispatch(dispatchSaveMenuByResId()).unwrap(), [dispatch]),
-        syncZomatoMenu: useCallback(() => dispatch(dispatchSyncZomatoMenu(activeResId)).unwrap(), [dispatch, activeResId])
+        saveMenuByResId: () => dispatch(dispatchSaveMenuByResId()),
+        syncZomatoMenu: (resId) => dispatch(dispatchSyncZomatoMenu(resId))
     };
 };

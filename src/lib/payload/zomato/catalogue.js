@@ -91,11 +91,25 @@ export function buildVariantWrappersBuilder(properties, allOptionsArrays, newIte
                 price = combo[0].price ?? newItem.price ?? 0;
             }
 
+            const varId = generateTempReferenceId();
+            const variantModifierGroupMaps = (newItem.addons || []).map((addonId, idx) => {
+                const mgIdStr = String(addonId);
+                const isNewMg = mgIdStr.startsWith("temp-");
+                const cleanMgId = mgIdStr.replace("temp-", "");
+
+                return {
+                    modifierGroupId: isNewMg ? "" : cleanMgId,
+                    ...(isNewMg && { tempReferenceId: cleanMgId }),
+                    order: idx + 1,
+                    variantIsParent: true
+                };
+            });
+
             variantWrappers.push({
                 variant: {
-                    tempReferenceId: generateTempReferenceId(),
+                    tempReferenceId: varId,
                 },
-                variantModifierGroupMaps: [],
+                variantModifierGroupMaps: variantModifierGroupMaps,
                 variantPropertyValues: variantPropertyValues,
                 variantPrices: [
                     {
@@ -110,11 +124,25 @@ export function buildVariantWrappersBuilder(properties, allOptionsArrays, newIte
     }
 
     if (properties.length === 0) {
+        const varId = generateTempReferenceId();
+        const variantModifierGroupMaps = (newItem.addons || []).map((addonId, idx) => {
+            const mgIdStr = String(addonId);
+            const isNewMg = mgIdStr.startsWith("temp-");
+            const cleanMgId = mgIdStr.replace("temp-", "");
+
+            return {
+                modifierGroupId: isNewMg ? "" : cleanMgId,
+                ...(isNewMg && { tempReferenceId: cleanMgId }),
+                order: idx + 1,
+                variantIsParent: true
+            };
+        });
+
         variantWrappers.push({
             variant: {
-                tempReferenceId: generateTempReferenceId(),
+                tempReferenceId: varId,
             },
-            variantModifierGroupMaps: [],
+            variantModifierGroupMaps: variantModifierGroupMaps,
             variantPrices: [
                 {
                     isVisible: true,
@@ -146,8 +174,6 @@ export function buildNewCatalogueItemBuilder(newItem, resId) {
             hasProperties: propertyWrappers.length > 0,
             isVisible: true,
             media: newItem.media || [],
-            templateType: "TT_DEFAULT",
-            onHoldStatus: 1,
             description: newItem.description || "",
             isRefrigerationRequired: false,
             ...((newItem.is_veg === false || newItem.is_veg === "NON_VEG" || newItem.is_veg === "NON-VEG") ? { meatTypes: (newItem.meatTypes && newItem.meatTypes.length > 0) ? newItem.meatTypes : ["chicken"] } : {}),
@@ -156,6 +182,76 @@ export function buildNewCatalogueItemBuilder(newItem, resId) {
         cataloguePropertyWrappers: propertyWrappers,
         variantWrappers: variantWrappers,
         mapModifierGroupOrder: {}
+    };
+}
+
+export function buildNewAddonCatalogueItemBuilder(addonOption, resId, variantTempId) {
+    const itemTempId = addonOption.id ? String(addonOption.id).replace("temp-", "") : generateTempReferenceId();
+    const vTempId = variantTempId || generateTempReferenceId();
+
+    let catalogueTags = [];
+    if (addonOption.is_veg === "EGG") {
+        catalogueTags.push("egg", "sf-kid-friendly", "sf-not-vegan");
+    } else {
+        const isNonVeg = addonOption.is_veg === false || addonOption.is_veg === "NON_VEG" || addonOption.is_veg === "NON-VEG";
+        catalogueTags.push(isNonVeg ? "non-veg" : "veg");
+    }
+
+    return {
+        catalogue: {
+            tempReferenceId: itemTempId,
+            resId: resId,
+            name: addonOption.name || "",
+            hasProperties: false,
+            isVisible: false,
+            media: [],
+            isRefrigerationRequired: false
+        },
+        catalogueTags: catalogueTags,
+        variantWrappers: [
+            {
+                variant: {
+                    tempReferenceId: vTempId
+                },
+                variantModifierGroupMaps: [],
+                variantPrices: [
+                    {
+                        isVisible: true,
+                        service: "delivery",
+                        tempReferenceId: generateTempReferenceId(),
+                        price: addonOption.price || 0
+                    }
+                ]
+            }
+        ]
+    };
+}
+
+export function buildModifierGroupBuilder(modifierGroup, optionsVariantIds = []) {
+    const groupId = modifierGroup.id && !String(modifierGroup.id).startsWith("temp-") ? String(modifierGroup.id) : "";
+    const tempReferenceId = modifierGroup.tempReferenceId || generateTempReferenceId();
+
+    return {
+        modifierGroup: {
+            modifierGroupId: groupId,
+            ...(groupId ? {} : { tempReferenceId: tempReferenceId }),
+            name: modifierGroup.name || "",
+            displayName: modifierGroup.displayName || modifierGroup.name || "",
+            min: modifierGroup.min || 0,
+            max: modifierGroup.max || 1,
+            maxSelectionsPerItem: modifierGroup.max_per_item || 1,
+            isCompulsory: modifierGroup.is_compulsory || (modifierGroup.min || 0) > 0
+        },
+        variantModifierGroupMaps: optionsVariantIds.map((optIdObj, index) => {
+            const map = { order: index + 1 };
+            if (optIdObj.variantId) {
+                map.variantId = optIdObj.variantId;
+            }
+            if (optIdObj.tempReferenceId) {
+                map.tempReferenceId = optIdObj.tempReferenceId;
+            }
+            return map;
+        })
     };
 }
 
@@ -276,16 +372,6 @@ export function updateVariantWrappers(existingVarWrappers, dbItem, allOptionsArr
     if (allOptionsArrays.length > 0) {
         const combinations = cartesianProduct(allOptionsArrays);
         combinations.forEach((combo) => {
-            let variantPropertyValues = combo.map(opt => {
-                let vpv = {};
-                if (opt.propertyValueId) {
-                    vpv.propertyValueId = opt.propertyValueId;
-                } else {
-                    vpv.tempReferenceId = opt.tempReferenceId;
-                }
-                return vpv;
-            });
-
             let varIdStr = "";
             if (properties.length === 1) {
                 varIdStr = String(combo[0].variant_id || "");
@@ -297,6 +383,30 @@ export function updateVariantWrappers(existingVarWrappers, dbItem, allOptionsArr
 
             let finalVarId = existingVar ? existingVar.variant.variantId : "";
             let varTempRefId = existingVar ? (existingVar.variant.tempReferenceId || generateTempReferenceId()) : generateTempReferenceId();
+
+            let variantPropertyValues = combo.map(opt => {
+                let vpv = {};
+                if (opt.propertyValueId) {
+                    vpv.propertyValueId = opt.propertyValueId;
+                } else {
+                    vpv.tempReferenceId = opt.tempReferenceId;
+                }
+
+                if (existingVar && existingVar.variantPropertyValues) {
+                    const existingVpv = existingVar.variantPropertyValues.find(evpv => 
+                        (evpv.propertyValueId && evpv.propertyValueId === vpv.propertyValueId) ||
+                        (evpv.tempReferenceId && evpv.tempReferenceId === vpv.tempReferenceId)
+                    );
+                    if (existingVpv && existingVpv.id) {
+                        vpv.id = existingVpv.id;
+                    }
+                }
+                if (finalVarId) {
+                    vpv.variantId = finalVarId;
+                }
+
+                return vpv;
+            });
 
             let existingPrice = existingVar?.variantPrices?.[0] || null;
 
@@ -332,9 +442,43 @@ export function updateVariantWrappers(existingVarWrappers, dbItem, allOptionsArr
                 delete newPrice.id;
             }
 
+            let variantModifierGroupMaps = (dbItem.addons || []).map((addonId, idx) => {
+                let modGroupId = String(addonId);
+                let isNew = modGroupId.startsWith("temp-");
+                if (isNew) {
+                    modGroupId = modGroupId.replace("temp-", "");
+                }
+                
+                let existingMap = null;
+                if (existingVar && existingVar.variantModifierGroupMaps) {
+                    existingMap = existingVar.variantModifierGroupMaps.find(m => 
+                        String(m.modifierGroupId) === modGroupId || (m.tempReferenceId && String(m.tempReferenceId) === modGroupId)
+                    );
+                }
+
+                let mapObj = {
+                    ...(existingMap || {}),
+                    order: idx + 1,
+                    variantIsParent: true,
+                    modifierGroupId: isNew ? "" : modGroupId,
+                    ...(!isNew && finalVarId && { variantId: finalVarId })
+                };
+
+                if (isNew) {
+                    mapObj.tempReferenceId = modGroupId;
+                    delete mapObj.id;
+                } else if (!existingMap || (!existingMap.id && !existingMap.tempReferenceId)) {
+                    // if it's an existing addon but a new map, omit tempReferenceId as per previous discussion
+                    delete mapObj.id;
+                }
+
+                return mapObj;
+            });
+
             updatedVarWrappers.push({
                 ...(existingVar || {}),
                 variant: newVariant,
+                variantModifierGroupMaps: variantModifierGroupMaps,
                 variantPropertyValues: variantPropertyValues,
                 variantPrices: [newPrice]
             });
@@ -391,9 +535,9 @@ export function getUpdatedCatalogueData(catalogueWrappers, dbMenu = []) {
             if (!dbItem) {
                 return null;
             }
-
+;
             if (dbItem.status === 'delete' || dbItem.status === 'deleted') {
-                return null;
+                return null
             }
 
             let newWrapper = updateCatalogueBase(wrapper, dbItem);
@@ -444,9 +588,41 @@ export function getUpdatedCatalogueData(catalogueWrappers, dbMenu = []) {
                     tempReferenceId: generateTempReferenceId()
                 };
 
+                let variantModifierGroupMaps = (dbItem.addons || []).map((addonId, idx) => {
+                    let modGroupId = String(addonId);
+                    let isNew = modGroupId.startsWith("temp-");
+                    if (isNew) {
+                        modGroupId = modGroupId.replace("temp-", "");
+                    }
+                    
+                    let existingMap = null;
+                    if (existingVar && existingVar.variantModifierGroupMaps) {
+                        existingMap = existingVar.variantModifierGroupMaps.find(m => 
+                            String(m.modifierGroupId) === modGroupId || (m.tempReferenceId && String(m.tempReferenceId) === modGroupId)
+                        );
+                    }
+
+                    let mapObj = {
+                        ...(existingMap || {}),
+                        order: idx + 1,
+                        variantIsParent: true,
+                        modifierGroupId: isNew ? "" : modGroupId,
+                        ...(!isNew && baseVarObj.variantId && { variantId: baseVarObj.variantId })
+                    };
+
+                    if (isNew) {
+                        mapObj.tempReferenceId = modGroupId;
+                        delete mapObj.id;
+                    } else if (!existingMap || (!existingMap.id && !existingMap.tempReferenceId)) {
+                        delete mapObj.id;
+                    }
+
+                    return mapObj;
+                });
+
                 newWrapper.variantWrappers = [{
                     variant: baseVarObj,
-                    variantModifierGroupMaps: [],
+                    variantModifierGroupMaps: variantModifierGroupMaps,
                     variantPrices: [priceObj]
                 }];
             }

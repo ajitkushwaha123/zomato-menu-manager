@@ -34,7 +34,11 @@ export const saveMenuByResId = createAsyncThunk(
             if (!menu.activeResId || !menu.menuData) {
                 throw new Error("No active restaurant or menu data to save.");
             }
-            const data = await MenuService.saveMenu(menu.activeResId, menu.menuData);
+            const payload = {
+                menu: menu.menuData,
+                addons: menu.addonsData
+            };
+            const data = await MenuService.saveMenu(menu.activeResId, payload);
             return data;
         } catch (error) {
             return rejectWithValue(error.message || 'Failed to save menu');
@@ -44,6 +48,7 @@ export const saveMenuByResId = createAsyncThunk(
 
 const initialState = {
     menuData: null,         // Array of categories
+    addonsData: [],         // Array of addons/modifier groups
     restaurantName: '',
     activeResId: null,
     activeView: 'MENU',     // 'MENU' or 'BULK'
@@ -267,6 +272,299 @@ const menuSlice = createSlice({
                     });
                 });
             }
+        },
+        moveSubCategory: (state, action) => {
+            const { subCategoryId, sourceCategoryId, targetCategoryId } = action.payload;
+            if (sourceCategoryId === targetCategoryId) return;
+
+            let subToMove = null;
+            // 1. Remove from source
+            const sourceCat = state.menuData?.find(c => c.id === sourceCategoryId);
+            if (sourceCat && sourceCat.sub_category) {
+                const index = sourceCat.sub_category.findIndex(s => s.id === subCategoryId);
+                if (index !== -1) {
+                    subToMove = sourceCat.sub_category[index];
+                    sourceCat.sub_category.splice(index, 1);
+                }
+            }
+
+            // 2. Add to target
+            if (subToMove) {
+                const targetCat = state.menuData?.find(c => c.id === targetCategoryId);
+                if (targetCat) {
+                    if (!targetCat.sub_category) targetCat.sub_category = [];
+                    targetCat.sub_category.push(subToMove);
+                }
+            }
+        },
+        bulkMergeCategories: (state, action) => {
+            const { categoryIds, targetCategoryId } = action.payload;
+            if (!categoryIds?.length || !targetCategoryId) return;
+
+            const targetCat = state.menuData?.find(c => c.id === targetCategoryId);
+            if (!targetCat) return;
+
+            state.menuData?.forEach(cat => {
+                if (categoryIds.includes(cat.id) && cat.id !== targetCategoryId) {
+                    if (cat.sub_category && cat.sub_category.length > 0) {
+                        if (!targetCat.sub_category) targetCat.sub_category = [];
+                        targetCat.sub_category.push(...cat.sub_category);
+                    }
+                    if (String(cat.id).startsWith('temp-')) {
+                        state.menuData = state.menuData.filter(c => c.id !== cat.id);
+                    } else {
+                        cat.status = 'delete';
+                    }
+                }
+            });
+        },
+        bulkMergeSubCategories: (state, action) => {
+            const { subCategoryIds, targetSubCategoryId } = action.payload;
+            if (!subCategoryIds?.length || !targetSubCategoryId) return;
+
+            let targetSub = null;
+            state.menuData?.forEach(cat => {
+                const found = cat.sub_category?.find(s => s.id === targetSubCategoryId);
+                if (found) targetSub = found;
+            });
+            if (!targetSub) return;
+
+            state.menuData?.forEach(cat => {
+                if (cat.sub_category) {
+                    for (let i = cat.sub_category.length - 1; i >= 0; i--) {
+                        const sub = cat.sub_category[i];
+                        if (subCategoryIds.includes(sub.id) && sub.id !== targetSubCategoryId) {
+                            if (sub.items && sub.items.length > 0) {
+                                if (!targetSub.items) targetSub.items = [];
+                                targetSub.items.push(...sub.items);
+                            }
+                            if (String(sub.id).startsWith('temp-')) {
+                                cat.sub_category.splice(i, 1);
+                            } else {
+                                sub.status = 'delete';
+                            }
+                        }
+                    }
+                }
+            });
+        },
+        bulkMergeCategoriesIntoNewName: (state, action) => {
+            const { categoryIds, newName } = action.payload;
+            if (!categoryIds?.length || categoryIds.length < 2 || !newName?.trim()) return;
+
+            // Pick the first one as the target
+            const targetId = categoryIds[0];
+            const targetCat = state.menuData?.find(c => c.id === targetId);
+            if (!targetCat) return;
+
+            // Rename target
+            targetCat.name = newName.trim();
+
+            // Merge the rest into target
+            state.menuData?.forEach(cat => {
+                if (categoryIds.includes(cat.id) && cat.id !== targetId) {
+                    if (cat.sub_category && cat.sub_category.length > 0) {
+                        if (!targetCat.sub_category) targetCat.sub_category = [];
+                        targetCat.sub_category.push(...cat.sub_category);
+                    }
+                    if (String(cat.id).startsWith('temp-')) {
+                        state.menuData = state.menuData.filter(c => c.id !== cat.id);
+                    } else {
+                        cat.status = 'delete';
+                    }
+                }
+            });
+        },
+        bulkMergeSubCategoriesIntoNewName: (state, action) => {
+            const { subCategoryIds, newName } = action.payload;
+            if (!subCategoryIds?.length || subCategoryIds.length < 2 || !newName?.trim()) return;
+
+            // Pick the first one as the target
+            const targetId = subCategoryIds[0];
+            let targetSub = null;
+            state.menuData?.forEach(cat => {
+                const found = cat.sub_category?.find(s => s.id === targetId);
+                if (found) targetSub = found;
+            });
+            if (!targetSub) return;
+
+            // Rename target
+            targetSub.name = newName.trim();
+
+            // Merge the rest into target
+            state.menuData?.forEach(cat => {
+                if (cat.sub_category) {
+                    for (let i = cat.sub_category.length - 1; i >= 0; i--) {
+                        const sub = cat.sub_category[i];
+                        if (subCategoryIds.includes(sub.id) && sub.id !== targetId) {
+                            if (sub.items && sub.items.length > 0) {
+                                if (!targetSub.items) targetSub.items = [];
+                                targetSub.items.push(...sub.items);
+                            }
+                            if (String(sub.id).startsWith('temp-')) {
+                                cat.sub_category.splice(i, 1);
+                            } else {
+                                sub.status = 'delete';
+                            }
+                        }
+                    }
+                }
+            });
+        },
+        bulkMoveItems: (state, action) => {
+            const { itemIds, targetSubCategoryId } = action.payload;
+            if (!itemIds?.length || !targetSubCategoryId) return;
+
+            const itemsToMove = [];
+            
+            // 1. Remove from all sources
+            state.menuData?.forEach(cat => {
+                cat.sub_category?.forEach(sub => {
+                    if (sub.items) {
+                        for (let i = sub.items.length - 1; i >= 0; i--) {
+                            if (itemIds.includes(sub.items[i].id)) {
+                                itemsToMove.push(sub.items[i]);
+                                sub.items.splice(i, 1);
+                            }
+                        }
+                    }
+                });
+            });
+
+            // 2. Add to target
+            if (itemsToMove.length > 0) {
+                state.menuData?.forEach(cat => {
+                    cat.sub_category?.forEach(sub => {
+                        if (sub.id === targetSubCategoryId) {
+                            if (!sub.items) sub.items = [];
+                            sub.items.push(...itemsToMove);
+                        }
+                    });
+                });
+            }
+        },
+        bulkMoveSubCategories: (state, action) => {
+            const { subCategoryIds, targetCategoryId } = action.payload;
+            if (!subCategoryIds?.length || !targetCategoryId) return;
+
+            const subsToMove = [];
+
+            // 1. Remove from all sources
+            state.menuData?.forEach(cat => {
+                if (cat.sub_category) {
+                    for (let i = cat.sub_category.length - 1; i >= 0; i--) {
+                        if (subCategoryIds.includes(cat.sub_category[i].id)) {
+                            subsToMove.push(cat.sub_category[i]);
+                            cat.sub_category.splice(i, 1);
+                        }
+                    }
+                }
+            });
+
+            // 2. Add to target
+            if (subsToMove.length > 0) {
+                const targetCat = state.menuData?.find(c => c.id === targetCategoryId);
+                if (targetCat) {
+                    if (!targetCat.sub_category) targetCat.sub_category = [];
+                    targetCat.sub_category.push(...subsToMove);
+                }
+            }
+        },
+        // --- Addon CRUD Reducers ---
+        addAddonGroup: (state, action) => {
+            if (!Array.isArray(state.addonsData)) state.addonsData = [];
+            const newAddon = {
+                id: action.payload.id || 'temp-' + crypto.randomUUID(),
+                name: action.payload.name || 'New Addon',
+                is_compulsory: false,
+                min: action.payload.min || 0,
+                max: action.payload.max || 1,
+                allow_multiple: false,
+                max_per_item: 1,
+                options: []
+            };
+            state.addonsData.push(newAddon);
+        },
+        updateAddonGroup: (state, action) => {
+            const { addonId, data } = action.payload;
+            const addon = state.addonsData?.find(a => a.id === addonId);
+            if (addon) {
+                Object.assign(addon, data);
+            }
+        },
+        deleteAddonGroup: (state, action) => {
+            const addonId = action.payload;
+            state.addonsData = state.addonsData?.filter(a => a.id !== addonId) || [];
+        },
+        addAddonOption: (state, action) => {
+            const { addonId, option } = action.payload;
+            const addon = state.addonsData?.find(a => a.id === addonId);
+            if (addon) {
+                if (!addon.options) addon.options = [];
+                addon.options.push({
+                    id: 'temp-' + crypto.randomUUID(),
+                    name: option.name || '',
+                    price: option.price || 0,
+                    is_default: option.is_default || false,
+                    is_veg: option.is_veg || 'VEG'
+                });
+            }
+        },
+        updateAddonOption: (state, action) => {
+            const { addonId, optionId, data } = action.payload;
+            const addon = state.addonsData?.find(a => a.id === addonId);
+            if (addon && addon.options) {
+                const opt = addon.options.find(o => o.id === optionId);
+                if (opt) {
+                    Object.assign(opt, data);
+                }
+            }
+        },
+        deleteAddonOption: (state, action) => {
+            const { addonId, optionId } = action.payload;
+            const addon = state.addonsData?.find(a => a.id === addonId);
+            if (addon && addon.options) {
+                addon.options = addon.options.filter(o => o.id !== optionId);
+            }
+        },
+        toggleItemAddon: (state, action) => {
+            const { itemId, addonId } = action.payload;
+            let itemToUpdate = null;
+            state.menuData?.forEach(cat => {
+                cat.sub_category?.forEach(sub => {
+                    const found = sub.items?.find(item => item.id === itemId);
+                    if (found) itemToUpdate = found;
+                });
+            });
+
+            if (itemToUpdate) {
+                if (!itemToUpdate.addons) itemToUpdate.addons = [];
+                const idx = itemToUpdate.addons.indexOf(addonId);
+                if (idx > -1) {
+                    itemToUpdate.addons.splice(idx, 1);
+                } else {
+                    itemToUpdate.addons.push(addonId);
+                }
+            }
+        },
+        bulkToggleAddon: (state, action) => {
+            const { addonId, itemIds, isAttaching } = action.payload;
+            state.menuData?.forEach(cat => {
+                cat.sub_category?.forEach(sub => {
+                    sub.items?.forEach(item => {
+                        if (itemIds.includes(item.id)) {
+                            if (!item.addons) item.addons = [];
+                            if (isAttaching) {
+                                if (!item.addons.includes(addonId)) {
+                                    item.addons.push(addonId);
+                                }
+                            } else {
+                                item.addons = item.addons.filter(id => id !== addonId);
+                            }
+                        }
+                    });
+                });
+            });
         }
     },
     extraReducers: (builder) => {
@@ -285,6 +583,7 @@ const menuSlice = createSlice({
                     : (payloadData?.menu || payloadData?.data || []);
 
                 state.menuData = newMenuData;
+                state.addonsData = Array.isArray(payloadData?.addons) ? payloadData.addons : [];
                 state.restaurantName = payloadData?.restaurantName || payloadData?.name || '';
 
                 if (!state.activeResId && payloadData?.resId) {
@@ -330,12 +629,12 @@ const menuSlice = createSlice({
             .addCase(syncZomatoMenu.fulfilled, (state, action) => {
                 state.isSyncing = false;
 
-                const payloadData = action.payload;
-                const newMenuData = Array.isArray(payloadData)
-                    ? payloadData
-                    : (payloadData?.menu || payloadData?.data || []);
-
-                state.menuData = newMenuData;
+                const dbDoc = action.payload;
+                const fetchedMenu = dbDoc?.menu || [];
+                const fetchedAddons = dbDoc?.addons || [];
+                
+                state.menuData = Array.isArray(fetchedMenu) ? fetchedMenu : [];
+                state.addonsData = Array.isArray(fetchedAddons) ? fetchedAddons : [];
 
                 if (state.menuData.length > 0) {
                     const categoryExists = state.activeCategory && state.menuData.find(c => c.id === state.activeCategory);
@@ -381,7 +680,26 @@ export const {
     updateItem,
     addImage,
     deleteItem,
-    moveItem
+    moveItem,
+    moveSubCategory,
+    mergeCategories,
+    mergeSubCategories,
+    bulkMergeCategories,
+    bulkMergeSubCategories,
+    bulkMergeCategoriesIntoNewName,
+    bulkMergeSubCategoriesIntoNewName,
+    bulkMoveItems,
+    bulkMoveSubCategories,
+    
+    // Addon actions
+    addAddonGroup,
+    updateAddonGroup,
+    deleteAddonGroup,
+    addAddonOption,
+    updateAddonOption,
+    deleteAddonOption,
+    toggleItemAddon,
+    bulkToggleAddon
 } = menuSlice.actions;
 
 export default menuSlice.reducer;

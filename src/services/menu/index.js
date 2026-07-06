@@ -28,9 +28,9 @@ export const MenuService = {
         }
     },
 
-    async saveMenu(resId, menuData) {
+    async saveMenu(resId, payload) {
         try {
-            const { data } = await api.put(API_ENDPOINTS.MENU.UPDATE_MENU(resId), { menu: menuData });
+            const { data } = await api.put(API_ENDPOINTS.MENU.UPDATE_MENU(resId), payload);
             return data;
         } catch (err) {
             throw new Error(

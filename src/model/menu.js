@@ -20,6 +20,7 @@ const MenuSchema = new mongoose.Schema(
         },
 
         menu: mongoose.Schema.Types.Mixed,
+        addons: mongoose.Schema.Types.Mixed,
     },
     {
         timestamps: true,

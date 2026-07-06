@@ -36,7 +36,7 @@ export function MenuEditorHeader({
 
     const handleSync = async () => {
         try {
-            await syncZomatoMenu();
+            await syncZomatoMenu(resId);
             notification.success("Menu synced with Zomato successfully!", { duration: 3000 });
         } catch (err) {
             console.error("Failed to sync Zomato menu:", err);

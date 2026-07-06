@@ -57,7 +57,7 @@ export async function PUT(req, { params }) {
         const body = await req.json();
         const platform = req.nextUrl.searchParams.get("platform") || "zomato"; // Align default with GET
 
-        const { menu } = body;
+        const { menu, addons } = body;
 
         if (!resId) {
             return NextResponse.json(
@@ -99,6 +99,9 @@ export async function PUT(req, { params }) {
         }
 
         existingMenu.menu = menu;
+        if (addons !== undefined) {
+            existingMenu.addons = addons;
+        }
         await existingMenu.save();
         
         return NextResponse.json({

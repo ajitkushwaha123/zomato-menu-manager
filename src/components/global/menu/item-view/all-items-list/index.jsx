@@ -49,23 +49,12 @@ export default function AllItemsList({ menuData, updateItem, deleteItem, moveIte
                                     isAllItemsView={true}
                                     onChange={(updatedItem) => {
                                         if (updatedItem._parentSubCategoryId && updatedItem._parentSubCategoryId !== item._parentSubCategoryId) {
-                                            moveItem({
-                                                itemId: item.id,
-                                                sourceSubCategoryId: item._parentSubCategoryId,
-                                                targetSubCategoryId: updatedItem._parentSubCategoryId
-                                            });
+                                            moveItem(item.id, updatedItem._parentSubCategoryId);
                                         } else {
-                                            updateItem({
-                                                itemId: item.id,
-                                                updates: updatedItem,
-                                            });
+                                            updateItem(item.id, updatedItem);
                                         }
                                     }}
-                                    onDelete={() =>
-                                        deleteItem({
-                                            itemId: item.id,
-                                        })
-                                    }
+                                    onDelete={() => deleteItem(item.id)}
                                 />
                             ))}
                     </div>

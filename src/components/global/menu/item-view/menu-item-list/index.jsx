@@ -78,15 +78,10 @@ export default function MenuItemList({
                                         key={item.id}
                                         item={item}
                                         onChange={(updatedItem) =>
-                                            updateCatalogue({
-                                                itemId: item.id,
-                                                updates: updatedItem,
-                                            })
+                                            updateCatalogue(item.id, updatedItem)
                                         }
                                         onDelete={() =>
-                                            deleteItem({
-                                                itemId: item.id,
-                                            })
+                                            deleteItem(item.id)
                                         }
                                 />
                             ))}

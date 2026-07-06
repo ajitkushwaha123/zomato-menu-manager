@@ -6,6 +6,7 @@ export function buildCategoryPayload(categoryWrapper) {
     return {
         category: {
             ...(categoryWrapper?.category || {}),
+            hasTiming: categoryWrapper?.category?.hasTiming ?? false,
             tempReferenceId: categoryId ? "" : (catTempRef || ""),
         },
         timings: categoryWrapper?.timings || [],
@@ -71,7 +72,7 @@ export function buildNewSubCategory(newDbSub, categoryId, startingOrder) {
             entityType: "catalogue",
             entityId: "",
             order: entities.length + 1,
-            tempReferenceId: String(newItem.id).replace("temp-", "")
+            tempReferenceId: String(newItem.id).replace("temp-", ""),
         });
     }
 

@@ -2,6 +2,7 @@ import { Trash2, Plus, ImageIcon, ChevronDown, ChevronUp, X, Loader2, CheckCircl
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import useNotification from "@/store/hooks/useNotification";
+import { useMenu } from "@/store/hooks/useMenu";
 import {
     Select,
     SelectContent,
@@ -37,6 +38,7 @@ export default function MenuItemRow({
     const { activeResId } = useSelector((state) => state.menu);
     const dispatch = useDispatch();
     const notification = useNotification();
+    const { addonsData, toggleItemAddon } = useMenu();
 
     const [isHovered, setIsHovered] = useState(false);
     const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -380,6 +382,30 @@ export default function MenuItemRow({
                     </div>
                 )}
             </div>
+
+            {addonsData && addonsData.length > 0 && (
+                <div className="mt-4 pt-3 border-t border-dashed">
+                    <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Addons</div>
+                    <div className="flex flex-wrap gap-2">
+                        {addonsData.map(addon => {
+                            const isSelected = (item?.addons || []).includes(addon.id);
+                            return (
+                                <button
+                                    key={addon.id}
+                                    onClick={() => toggleItemAddon(item.id, addon.id)}
+                                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-md transition-colors border ${
+                                        isSelected 
+                                            ? "bg-primary/10 text-primary border-primary/30 shadow-sm" 
+                                            : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                    }`}
+                                >
+                                    {addon.name}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

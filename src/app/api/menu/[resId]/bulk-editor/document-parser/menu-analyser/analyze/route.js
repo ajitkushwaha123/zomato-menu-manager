@@ -104,11 +104,18 @@ export async function POST(req) {
         }
 
         preparedCategories.forEach(newCat => {
-            const existingCat = existingMenu.find(c => c.name?.toLowerCase() === newCat.name?.toLowerCase());
+            const existingCat = existingMenu.find(c => 
+                c.name?.toLowerCase() === newCat.name?.toLowerCase() &&
+                c.status !== 'delete' && c.status !== 'deleted'
+            );
+            
             if (existingCat) {
                 (newCat.sub_category || []).forEach(newSub => {
                     if (!existingCat.sub_category) existingCat.sub_category = [];
-                    const existingSub = existingCat.sub_category.find(s => s.name?.toLowerCase() === newSub.name?.toLowerCase());
+                    const existingSub = existingCat.sub_category.find(s => 
+                        s.name?.toLowerCase() === newSub.name?.toLowerCase() &&
+                        s.status !== 'delete' && s.status !== 'deleted'
+                    );
 
                     if (existingSub) {
                         if (!existingSub.items) existingSub.items = [];
