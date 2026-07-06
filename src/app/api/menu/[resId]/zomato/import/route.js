@@ -305,7 +305,8 @@ export async function GET(req, { params }) {
                 success: true,
                 message: "Menu fetched successfully",
                 data: savedMenu,
-                parsedAddons: parsedAddons
+                parsedAddons: parsedAddons,
+                result: result
             },
             { status: 200 }
         );

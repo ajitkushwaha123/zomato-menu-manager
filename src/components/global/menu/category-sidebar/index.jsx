@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useMenu } from "@/store/hooks/useMenu";
 import { useMemo, useState, useEffect } from "react";
 import InlineInput from "@/components/ui/inline-input";
-import { Plus, Layers, Settings2, DollarSign, AlignLeft, Image as ImageIcon, ChevronLeft, ChevronRight, FileUp, Share , Cloud , PlusCircle, AlertTriangle } from "lucide-react";
+import { Plus, Layers, Settings2, DollarSign, AlignLeft, Image as ImageIcon, ChevronLeft, ChevronRight, FileUp, Share, Cloud, PlusCircle, AlertTriangle } from "lucide-react";
 import CategoryCard from "./category-card";
 
 export default function CategorySidebar() {
@@ -47,9 +47,7 @@ export default function CategorySidebar() {
                         temp_id: sub.temp_id,
                         raw: sub,
                     }))
-                    .sort((a, b) => a.name?.localeCompare(b.name || "")),
             }))
-            .sort((a, b) => a.name?.localeCompare(b.name || ""));
     }, [menuData]);
 
     useEffect(() => {

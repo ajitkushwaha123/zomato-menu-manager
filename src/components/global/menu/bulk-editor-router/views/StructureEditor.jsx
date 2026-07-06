@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { useDispatch } from "react-redux";
-import { bulkMoveItems, bulkMoveSubCategories, bulkMergeCategories, bulkMergeSubCategories, bulkMergeCategoriesIntoNewName, bulkMergeSubCategoriesIntoNewName, updateCategory, updateSubCategory } from "@/store/slice/menuSlice";
-import { FolderTree, ChevronRight, ChevronDown, CheckSquare, Square, CornerDownRight, Layers, Pencil, ArrowDownToLine, GitMerge } from "lucide-react";
+import { bulkMoveItems, bulkMoveSubCategories, bulkMergeCategories, bulkMergeSubCategories, bulkMergeCategoriesIntoNewName, bulkMergeSubCategoriesIntoNewName, updateCategory, updateSubCategory, bulkMakeSubCategoriesAsCategories, addCategory, addSubCategory } from "@/store/slice/menuSlice";
+import { FolderTree, ChevronRight, ChevronDown, CheckSquare, Square, CornerDownRight, Layers, Pencil, ArrowDownToLine, GitMerge, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import InlineInput from "@/components/ui/inline-input";
 import { Input } from "@/components/ui/input";
@@ -93,6 +93,10 @@ export default function StructureEditor({ menuData }) {
                     newName: newMergeName
                 }));
                 setNewMergeName("");
+            } else if (subCatActionType === 'MAKE_CATEGORY') {
+                dispatch(bulkMakeSubCategoriesAsCategories({
+                    subCategoryIds: Array.from(selectedSubCategoryIds)
+                }));
             }
             setSelectedSubCategoryIds(new Set());
         }
@@ -111,6 +115,7 @@ export default function StructureEditor({ menuData }) {
     const canMove = (selectedItemIds.size > 0 && targetSubCategoryId) || 
                     (selectedSubCategoryIds.size > 0 && subCatActionType === 'MOVE' && targetCategoryId) ||
                     (selectedSubCategoryIds.size > 0 && subCatActionType === 'MERGE' && newMergeName.trim().length > 0 && selectedSubCategoryIds.size > 1) ||
+                    (selectedSubCategoryIds.size > 0 && subCatActionType === 'MAKE_CATEGORY') ||
                     (selectedCategoryIds.size > 1 && newMergeName.trim().length > 0);
 
     return (
@@ -130,9 +135,21 @@ export default function StructureEditor({ menuData }) {
                 <div className="flex-1 border-r flex flex-col bg-gray-50/50">
                     <div className="p-4 border-b bg-white font-semibold text-sm flex items-center justify-between">
                         <span>1. Select Sources</span>
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                            {totalSelected} Selected
-                        </span>
+                        <div className="flex items-center gap-2">
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-7 text-xs px-2"
+                                onClick={() => {
+                                    dispatch(addCategory("New Category"));
+                                }}
+                            >
+                                <Plus className="w-3.5 h-3.5 mr-1" /> Add Category
+                            </Button>
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                                {totalSelected} Selected
+                            </span>
+                        </div>
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 space-y-2">
                         {activeCategories.map(cat => {
@@ -169,12 +186,26 @@ export default function StructureEditor({ menuData }) {
                                         ) : (
                                             <div className="flex flex-1 items-center justify-between group">
                                                 <span className="font-semibold text-gray-800">{cat.name}</span>
-                                                <button 
-                                                    onClick={(e) => { e.stopPropagation(); setEditingId(cat.id); }}
-                                                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-primary transition-opacity"
-                                                >
-                                                    <Pencil className="w-3.5 h-3.5" />
-                                                </button>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button 
+                                                        onClick={(e) => { 
+                                                            e.stopPropagation(); 
+                                                            if (!expandedCategories.has(cat.id)) toggleCategory(cat.id);
+                                                            dispatch(addSubCategory({ categoryId: cat.id, name: "New Subcategory" }));
+                                                        }}
+                                                        className="p-1 text-gray-400 hover:text-primary transition-colors"
+                                                        title="Add Subcategory"
+                                                    >
+                                                        <Plus className="w-3.5 h-3.5" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); setEditingId(cat.id); }}
+                                                        className="p-1 text-gray-400 hover:text-primary transition-colors"
+                                                        title="Rename Category"
+                                                    >
+                                                        <Pencil className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
                                         </div>
@@ -315,7 +346,7 @@ export default function StructureEditor({ menuData }) {
                         {/* Target for SUBCATEGORIES */}
                         {selectedSubCategoryIds.size > 0 && (
                             <div className="space-y-3 mt-6">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                     <button 
                                         onClick={() => { setSubCatActionType('MOVE'); setTargetSubCategoryId(null); }}
                                         className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-colors ${subCatActionType === 'MOVE' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
@@ -327,6 +358,12 @@ export default function StructureEditor({ menuData }) {
                                         className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-colors ${subCatActionType === 'MERGE' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
                                     >
                                         <GitMerge className="w-3.5 h-3.5 inline mr-1" /> Merge Into Subcategory
+                                    </button>
+                                    <button 
+                                        onClick={() => { setSubCatActionType('MAKE_CATEGORY'); setTargetCategoryId(null); setTargetSubCategoryId(null); }}
+                                        className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-colors ${subCatActionType === 'MAKE_CATEGORY' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                                    >
+                                        <FolderTree className="w-3.5 h-3.5 inline mr-1" /> Make as Category
                                     </button>
                                 </div>
                                 
@@ -374,6 +411,15 @@ export default function StructureEditor({ menuData }) {
                                                 </p>
                                             </>
                                         )}
+                                    </div>
+                                )}
+
+                                {subCatActionType === 'MAKE_CATEGORY' && (
+                                    <div className="space-y-4 mt-4 p-4 border rounded-lg bg-purple-50/50 border-purple-100">
+                                        <h3 className="text-sm font-semibold text-purple-800">Convert {selectedSubCategoryIds.size} Subcategor{selectedSubCategoryIds.size > 1 ? 'ies' : 'y'} to Categor{selectedSubCategoryIds.size > 1 ? 'ies' : 'y'}</h3>
+                                        <p className="text-xs text-purple-700">
+                                            The selected subcategories will be extracted from their current categories. For each one, a new Category will be created with the exact same name, containing a single Subcategory (also with the same name) holding all its items.
+                                        </p>
                                     </div>
                                 )}
                             </div>
@@ -448,9 +494,9 @@ export default function StructureEditor({ menuData }) {
                     <Button 
                         onClick={handleMoveOrMerge}
                         disabled={!canMove}
-                        className={`${(subCatActionType === 'MERGE' || selectedCategoryIds.size > 0) ? 'bg-amber-500 hover:bg-amber-600' : 'bg-primary hover:bg-primary/90'} text-white shadow-md`}
+                        className={`${(subCatActionType === 'MERGE' || selectedCategoryIds.size > 0) ? 'bg-amber-500 hover:bg-amber-600' : (subCatActionType === 'MAKE_CATEGORY' ? 'bg-purple-500 hover:bg-purple-600' : 'bg-primary hover:bg-primary/90')} text-white shadow-md`}
                     >
-                        {selectedCategoryIds.size > 0 || subCatActionType === 'MERGE' ? 'Confirm Merge' : 'Confirm Move'}
+                        {selectedCategoryIds.size > 0 || subCatActionType === 'MERGE' ? 'Confirm Merge' : (subCatActionType === 'MAKE_CATEGORY' ? 'Confirm Conversion' : 'Confirm Move')}
                     </Button>
                 </div>
             </div>

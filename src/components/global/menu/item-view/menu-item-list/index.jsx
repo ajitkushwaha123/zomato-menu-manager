@@ -72,7 +72,6 @@ export default function MenuItemList({
                     return (
                         <div className="space-y-4">
                             {[...visibleItems]
-                                .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
                                 .map((item) => (
                                     <MenuItemRow
                                         key={item.id}
@@ -83,8 +82,8 @@ export default function MenuItemList({
                                         onDelete={() =>
                                             deleteItem(item.id)
                                         }
-                                />
-                            ))}
+                                    />
+                                ))}
                         </div>
                     );
                 })()}

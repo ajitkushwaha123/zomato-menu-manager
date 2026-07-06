@@ -140,7 +140,7 @@ export default function MenuItemRow({
             <div className="flex gap-3">
                 <ZomatoImageDropzone
                     itemId={item?.id}
-                    className="shrink-0 rounded-lg overflow-hidden border transition-all duration-200 hover:ring-2 hover:ring-primary/50 group/img h-16 w-16"
+                    className="shrink-0 rounded-lg overflow-hidden border transition-all duration-200 hover:ring-2 hover:ring-primary/50 group/img h-16 w-16 relative"
                     onUploadSuccess={(mediaArray) => {
                         updateField("media", mediaArray);
                     }}
@@ -155,6 +155,15 @@ export default function MenuItemRow({
                         alt={item?.name || "Item"}
                         className="w-full h-full object-cover"
                     />
+                    {item?.media?.[0]?.mediaTags?.some?.(t => t.tagSlug === "rejected") ? (
+                        <div className="absolute inset-x-0 bottom-0 bg-red-500 text-white text-[9px] font-bold text-center py-0.5 z-10">
+                           REJECTED
+                        </div>
+                    ) : item?.media?.[0]?.onHoldStatus === 2 ? (
+                        <div className="absolute inset-x-0 bottom-0 bg-amber-500 text-white text-[9px] font-bold text-center py-0.5 z-10">
+                           ON HOLD
+                        </div>
+                    ) : null}
                     <button
                         className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity backdrop-blur-[2px] rounded-lg z-0"
                         title="Change Image"

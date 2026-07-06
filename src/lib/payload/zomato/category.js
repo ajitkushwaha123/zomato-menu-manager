@@ -38,25 +38,37 @@ export function updateExistingSubCategory(zomatoSub, dbSub) {
         }
     };
 
-    let entities = [...(newZomatoSub.subCategoryEntities || [])];
-    entities = entities.filter(entity => {
-        const dbItem = dbSub.items?.find(item => String(item.id) === String(entity.entityId) || String(item.id) === `temp-${entity.tempReferenceId}`);
-        if (!dbItem) return false;
-        if (dbItem.status === 'delete' || dbItem.status === 'deleted') return false;
-        return true;
+    const existingEntities = zomatoSub.subCategoryEntities || [];
+    let entities = [];
+
+    const activeItems = (dbSub.items || []).filter(item => item.status !== 'delete' && item.status !== 'deleted');
+    
+    activeItems.forEach((item, index) => {
+        const isTemp = String(item.id).startsWith("temp-");
+        const realId = String(item.id).replace("temp-", "");
+
+        const existing = existingEntities.find(e => 
+            String(e.entityId) === String(item.id) || 
+            String(e.tempReferenceId) === realId
+        );
+
+        if (existing) {
+            entities.push({
+                ...existing,
+                order: index + 1
+            });
+        } else {
+            entities.push({
+                id: "",
+                subCategoryId: String(zomatoSub?.subCategory?.subCategoryId || ""),
+                entityType: "catalogue",
+                entityId: isTemp ? "" : realId,
+                order: index + 1,
+                ...(isTemp ? { tempReferenceId: realId } : {})
+            });
+        }
     });
 
-    const newItems = (dbSub.items || []).filter(item => String(item.id).startsWith("temp-") && item.status !== 'delete' && item.status !== 'deleted');
-    for (const newItem of newItems) {
-        entities.push({
-            id: "",
-            subCategoryId: String(zomatoSub?.subCategory?.subCategoryId || ""),
-            entityType: "catalogue",
-            entityId: "",
-            order: entities.length + 1,
-            tempReferenceId: String(newItem.id).replace("temp-", "")
-        });
-    }
     newZomatoSub.subCategoryEntities = entities;
 
     return newZomatoSub;
@@ -64,17 +76,21 @@ export function updateExistingSubCategory(zomatoSub, dbSub) {
 
 export function buildNewSubCategory(newDbSub, categoryId, startingOrder) {
     let entities = [];
-    const newItems = (newDbSub.items || []).filter(item => item.status !== 'delete' && item.status !== 'deleted');
-    for (const newItem of newItems) {
+    const activeItems = (newDbSub.items || []).filter(item => item.status !== 'delete' && item.status !== 'deleted');
+    
+    activeItems.forEach((item, index) => {
+        const isTemp = String(item.id).startsWith("temp-");
+        const realId = String(item.id).replace("temp-", "");
+
         entities.push({
             id: "",
             subCategoryId: "",
             entityType: "catalogue",
-            entityId: "",
-            order: entities.length + 1,
-            tempReferenceId: String(newItem.id).replace("temp-", ""),
+            entityId: isTemp ? "" : realId,
+            order: index + 1,
+            ...(isTemp ? { tempReferenceId: realId } : {})
         });
-    }
+    });
 
     return {
         subCategory: {
@@ -88,7 +104,7 @@ export function buildNewSubCategory(newDbSub, categoryId, startingOrder) {
     };
 }
 
-export function buildNewCategory(newDbCat, resId, startingOrder) {
+export function buildNewCategory(newDbCat, resId, startingOrder, allZomatoSubWrappers = []) {
     let newCatWrapper = {
         category: {
             categoryId: "",
@@ -112,6 +128,16 @@ export function buildNewCategory(newDbCat, resId, startingOrder) {
 
     const newDbSubs = newDbCat.sub_category || [];
     for (const newDbSub of newDbSubs) {
+        if (!String(newDbSub.id).startsWith("temp-")) {
+            const oldZomatoSub = allZomatoSubWrappers.find(z => String(z.subCategory?.subCategoryId) === String(newDbSub.id));
+            if (oldZomatoSub) {
+                const movedSub = updateExistingSubCategory(oldZomatoSub, newDbSub);
+                movedSub.subCategory.categoryId = "";
+                movedSub.subCategory.order = newCatWrapper.subCategoryWrappers.length + 1;
+                newCatWrapper.subCategoryWrappers.push(movedSub);
+                continue;
+            }
+        }
         newCatWrapper.subCategoryWrappers.push(
             buildNewSubCategory(newDbSub, "", newCatWrapper.subCategoryWrappers.length + 1)
         );
@@ -125,6 +151,7 @@ export function getUpdatedCategoryData(categoryWrappers, dbMenu = [], globalResI
 
     let newCategoryWrappers = [];
     const resId = categoryWrappers[0]?.category?.resId || globalResId;
+    const allZomatoSubWrappers = categoryWrappers.flatMap(c => c.subCategoryWrappers || []);
 
     for (const zomatoCat of categoryWrappers) {
         const catId = String(zomatoCat?.category?.categoryId || "");
@@ -147,22 +174,56 @@ export function getUpdatedCategoryData(categoryWrappers, dbMenu = [], globalResI
             updatedSubCats = updatedSubCats.map(zomatoSub => {
                 const subId = String(zomatoSub?.subCategory?.subCategoryId || "");
                 const dbSub = (dbCat.sub_category || []).find(s => String(s.id) === subId);
+                
                 if (dbSub && (dbSub.status === 'delete' || dbSub.status === 'deleted')) return null;
-                return dbSub ? updateExistingSubCategory(zomatoSub, dbSub) : zomatoSub;
+                if (!dbSub) return null; // Subcategory was moved out
+                
+                return updateExistingSubCategory(zomatoSub, dbSub);
             }).filter(Boolean);
 
-            // Add new subcategories to existing category
-            const newDbSubs = (dbCat.sub_category || []).filter(s => String(s.id).startsWith("temp-") && s.status !== 'delete' && s.status !== 'deleted');
-            for (const newDbSub of newDbSubs) {
+            const existingSubCatIds = updatedSubCats.map(z => String(z.subCategory?.subCategoryId || ""));
+
+            // Add new subcategories and moved subcategories
+            const subsToAdd = (dbCat.sub_category || []).filter(s => {
+                if (s.status === 'delete' || s.status === 'deleted') return false;
+                if (existingSubCatIds.includes(String(s.id))) return false;
+                return true;
+            });
+
+            for (const subToAdd of subsToAdd) {
+                if (!String(subToAdd.id).startsWith("temp-")) {
+                    const oldZomatoSub = allZomatoSubWrappers.find(z => String(z.subCategory?.subCategoryId) === String(subToAdd.id));
+                    if (oldZomatoSub) {
+                         const movedSub = updateExistingSubCategory(oldZomatoSub, subToAdd);
+                         movedSub.subCategory.categoryId = catId;
+                         movedSub.subCategory.order = updatedSubCats.length + 1;
+                         updatedSubCats.push(movedSub);
+                         continue;
+                    }
+                }
+                
                 updatedSubCats.push(
-                    buildNewSubCategory(newDbSub, catId, updatedSubCats.length + 1)
+                    buildNewSubCategory(subToAdd, catId, updatedSubCats.length + 1)
                 );
             }
 
             updatedCat.subCategoryWrappers = updatedSubCats;
             newCategoryWrappers.push(buildCategoryPayload(updatedCat));
         } else {
-            newCategoryWrappers.push(buildCategoryPayload(zomatoCat));
+            let fallbackCat = { ...zomatoCat };
+            let fallbackSubs = [...(fallbackCat.subCategoryWrappers || [])];
+            fallbackSubs = fallbackSubs.map(zomatoSub => {
+                const subId = String(zomatoSub?.subCategory?.subCategoryId || "");
+                const claimedBySomeoneElse = dbMenu.some(c => 
+                    c.id !== catId && 
+                    (c.sub_category || []).some(s => String(s.id) === subId && s.status !== 'delete' && s.status !== 'deleted')
+                );
+                if (claimedBySomeoneElse) return null;
+                return zomatoSub;
+            }).filter(Boolean);
+            
+            fallbackCat.subCategoryWrappers = fallbackSubs;
+            newCategoryWrappers.push(buildCategoryPayload(fallbackCat));
         }
     }
 
@@ -170,7 +231,7 @@ export function getUpdatedCategoryData(categoryWrappers, dbMenu = [], globalResI
     const newDbCats = dbMenu.filter(c => String(c.id).startsWith("temp-") && c.status !== 'delete' && c.status !== 'deleted');
     for (const newDbCat of newDbCats) {
         newCategoryWrappers.push(
-            buildNewCategory(newDbCat, resId, newCategoryWrappers.length + 1)
+            buildNewCategory(newDbCat, resId, newCategoryWrappers.length + 1, allZomatoSubWrappers)
         );
     }
 

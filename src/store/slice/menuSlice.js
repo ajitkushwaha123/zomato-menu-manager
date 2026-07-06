@@ -470,6 +470,40 @@ const menuSlice = createSlice({
                 }
             }
         },
+        bulkMakeSubCategoriesAsCategories: (state, action) => {
+            const { subCategoryIds } = action.payload;
+            if (!subCategoryIds?.length) return;
+
+            state.menuData?.forEach(cat => {
+                if (cat.sub_category) {
+                    for (let i = cat.sub_category.length - 1; i >= 0; i--) {
+                        const sub = cat.sub_category[i];
+                        if (subCategoryIds.includes(sub.id)) {
+                            // Create new Category with a subcategory of the same name
+                            const newCategory = {
+                                id: 'temp-' + crypto.randomUUID(),
+                                name: sub.name,
+                                sub_category: [{
+                                    id: 'temp-' + crypto.randomUUID(),
+                                    name: sub.name,
+                                    items: sub.items || []
+                                }],
+                                items: []
+                            };
+                            
+                            state.menuData.push(newCategory);
+                            
+                            // Remove the old subcategory
+                            if (String(sub.id).startsWith('temp-')) {
+                                cat.sub_category.splice(i, 1);
+                            } else {
+                                sub.status = 'delete';
+                            }
+                        }
+                    }
+                }
+            });
+        },
         // --- Addon CRUD Reducers ---
         addAddonGroup: (state, action) => {
             if (!Array.isArray(state.addonsData)) state.addonsData = [];
@@ -690,6 +724,7 @@ export const {
     bulkMergeSubCategoriesIntoNewName,
     bulkMoveItems,
     bulkMoveSubCategories,
+    bulkMakeSubCategoriesAsCategories,
     
     // Addon actions
     addAddonGroup,

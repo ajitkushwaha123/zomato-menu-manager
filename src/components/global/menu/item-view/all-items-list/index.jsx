@@ -40,7 +40,6 @@ export default function AllItemsList({ menuData, updateItem, deleteItem, moveIte
                 ) : (
                     <div className="space-y-4">
                         {allItems
-                            .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
                             .map((item) => (
                                 <MenuItemRow
                                     key={item.id}

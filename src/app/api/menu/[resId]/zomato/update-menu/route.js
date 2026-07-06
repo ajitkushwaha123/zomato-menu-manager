@@ -96,15 +96,15 @@ export async function POST(req, { params }) {
             menu: menu?.menuResponse
         }
 
-        return NextResponse.json(
-            {
-                success: true,
-                message: "Menu updated successfully",
-                result: payload?.update_menu,
-                data: menu,
-            },
-            { status: 200 }
-        );
+        // return NextResponse.json(
+        //     {
+        //         success: true,
+        //         message: "Menu updated successfully",
+        //         result: payload?.update_menu,
+        //         data: menu,
+        //     },
+        //     { status: 200 }
+        // );
 
         const updatedMenu = await apiClient({
             req,

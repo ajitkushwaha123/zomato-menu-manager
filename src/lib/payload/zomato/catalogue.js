@@ -516,13 +516,23 @@ export function getUpdatedCatalogueData(catalogueWrappers, dbMenu = []) {
                 const isItemDeleted = item.status === 'delete' || item.status === 'deleted';
                 const effectiveStatus = (isCatDeleted || isSubDeleted || isItemDeleted) ? 'delete' : item.status;
 
-                dbItemsMap[String(item.id)] = { ...item, status: effectiveStatus };
-
-                if (String(item.id).startsWith("temp-") && effectiveStatus !== 'delete' && effectiveStatus !== 'deleted') {
-                    newDbItems.push(item);
+                const existing = dbItemsMap[String(item.id)];
+                if (existing && existing.status !== 'delete' && existing.status !== 'deleted' && effectiveStatus === 'delete') {
+                    // Item is already active somewhere, don't overwrite with deleted state
+                } else if (existing && (existing.status === 'delete' || existing.status === 'deleted') && effectiveStatus !== 'delete' && effectiveStatus !== 'deleted') {
+                    // Item was seen as deleted, but is actually active somewhere else
+                    dbItemsMap[String(item.id)] = { ...item, status: effectiveStatus };
+                } else if (!existing) {
+                    dbItemsMap[String(item.id)] = { ...item, status: effectiveStatus };
                 }
             });
         });
+    });
+
+    Object.values(dbItemsMap).forEach(item => {
+        if (String(item.id).startsWith("temp-") && item.status !== 'delete' && item.status !== 'deleted') {
+            newDbItems.push(item);
+        }
     });
 
     const resId = catalogueWrappers[0]?.catalogue?.resId || "";

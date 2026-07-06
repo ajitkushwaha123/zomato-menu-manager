@@ -23,6 +23,15 @@ const ImageCard = ({ item, onClick, onDrop, isActive }) => {
         >
             {/* Image Container */}
             <div className="aspect-square w-full bg-muted relative overflow-hidden border-b border-border/40">
+                {item?.media?.[0]?.mediaTags?.some?.(t => t.tagSlug === "rejected") ? (
+                    <div className="absolute inset-x-0 bottom-0 bg-red-500 text-white text-[10px] font-bold text-center py-1 z-10">
+                        REJECTED
+                    </div>
+                ) : item?.media?.[0]?.onHoldStatus === 2 ? (
+                    <div className="absolute inset-x-0 bottom-0 bg-amber-500 text-white text-[10px] font-bold text-center py-1 z-10">
+                        ON HOLD
+                    </div>
+                ) : null}
                 {imgUrl ? (
                     <img
                         src={imgUrl}
