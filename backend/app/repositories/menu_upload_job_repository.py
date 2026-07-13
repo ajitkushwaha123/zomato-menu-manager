@@ -1,0 +1,100 @@
+from app.db.mongo_db import db
+from app.models.menu_upload_job import MenuUploadJob
+
+class MenuUploadJobRepository:
+    def __init__(self):
+        self.collection = db.menu_upload_jobs
+
+    def create(
+        self,
+        job: MenuUploadJob,
+    ) -> MenuUploadJob:
+
+        self.collection.insert_one(
+            job.model_dump(mode="json")
+        )
+
+        return job
+
+    def get_by_job_id(
+        self,
+        job_id: str,
+    ) -> MenuUploadJob | None:
+
+        document = self.collection.find_one(
+            {"job_id": job_id}
+        )
+
+        if document is None:
+            return None
+
+        document.pop("_id", None)
+
+        return MenuUploadJob(**document)
+
+    def update(
+        self,
+        job: MenuUploadJob,
+    ):
+
+        self.collection.update_one(
+            {"job_id": job.job_id},
+            {
+                "$set": job.model_dump(mode="json")
+            },
+        )
+
+    def update_status(
+        self,
+        job_id: str,
+        status: str,
+    ):
+
+        self.collection.update_one(
+            {"job_id": job_id},
+            {
+                "$set": {
+                    "status": status
+                }
+            },
+        )
+
+    def update_progress(
+        self,
+        job_id: str,
+        status: str,
+        progress: int,
+        step: str,
+    ):
+        self.collection.update_one(
+            {"job_id": job_id},
+            {
+                "$set": {
+                    "status": status,
+                    "progress": progress,
+                    "step": step,
+                }
+            },
+        )
+
+    def mark_failed(
+        self,
+        job_id: str,
+        error: str,
+    ):
+        from app.models.enums import JobStatus
+        self.collection.update_one(
+            {"job_id": job_id},
+            {
+                "$set": {
+                    "status": JobStatus.FAILED.value,
+                    "error": error,
+                }
+            },
+        )
+
+    def update_chain_output(self, job_id: str, step_name: str, output_data: dict | list | str):
+        self.collection.update_one(
+            {"job_id": job_id},
+            {"$set": {f"chain_outputs.{step_name}": output_data}}
+        )
