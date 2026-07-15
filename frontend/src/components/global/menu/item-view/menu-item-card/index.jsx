@@ -133,10 +133,19 @@ export default function MenuItemRow({
 
     return (
         <div
-            className="group bg-white border rounded-xl p-3 hover:border-orange-300 transition-all mb-3"
+            className={`group border rounded-xl p-3 transition-all mb-3 relative ${
+                item?.id?.toString().startsWith("temp-") 
+                    ? "bg-green-50/50 border-green-300 hover:border-green-500"
+                    : "bg-white hover:border-orange-300"
+            }`}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
+            {item?.id?.toString().startsWith("temp-") && (
+                <div className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10 uppercase tracking-wider">
+                    NEW
+                </div>
+            )}
             <div className="flex gap-3">
                 <ZomatoImageDropzone
                     itemId={item?.id}
@@ -145,16 +154,25 @@ export default function MenuItemRow({
                         updateField("media", mediaArray);
                     }}
                 >
-                    <img
-                        src={
-                            item?.media?.[0]?.url || item?.media?.[0]?.thumbUrl ||
-                            item?.image_url ||
-                            item?.image ||
-                            "https://placehold.co/200x200?text=Food"
-                        }
-                        alt={item?.name || "Item"}
-                        className="w-full h-full object-cover"
-                    />
+                    {item?.media?.[0]?.isUploading ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400 p-1 text-center">
+                            <Loader2 className="animate-spin mb-1" size={20} />
+                            <span className="text-[8px] font-bold uppercase tracking-wider leading-[10px]">
+                                {item?.media?.[0]?.uploadText || "Processing"}
+                            </span>
+                        </div>
+                    ) : (
+                        <img
+                            src={
+                                item?.media?.[0]?.url || item?.media?.[0]?.thumbUrl ||
+                                item?.image_url ||
+                                item?.image ||
+                                "https://placehold.co/200x200?text=Food"
+                            }
+                            alt={item?.name || "Item"}
+                            className="w-full h-full object-cover"
+                        />
+                    )}
                     {item?.media?.[0]?.mediaTags?.some?.(t => t.tagSlug === "rejected") ? (
                         <div className="absolute inset-x-0 bottom-0 bg-red-500 text-white text-[9px] font-bold text-center py-0.5 z-10">
                            REJECTED
@@ -162,6 +180,10 @@ export default function MenuItemRow({
                     ) : item?.media?.[0]?.onHoldStatus === 2 ? (
                         <div className="absolute inset-x-0 bottom-0 bg-amber-500 text-white text-[9px] font-bold text-center py-0.5 z-10">
                            ON HOLD
+                        </div>
+                    ) : (item?.media?.[0]?.id?.toString().startsWith("temp-") || item?.media?.[0]?.tempReferenceId?.toString().startsWith("temp-") || item?.media?.[0]?.isNewlyUploaded) ? (
+                        <div className="absolute top-1 left-1 bg-green-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow z-10 uppercase tracking-wider">
+                           NEW
                         </div>
                     ) : null}
                     <button
@@ -250,10 +272,10 @@ export default function MenuItemRow({
                                 <span className="text-gray-500">₹</span>
                                 <input
                                     type="number"
-                                    value={item?.price ?? ""}
-                                    onChange={(e) => updateField("price", e.target.value === "" ? "" : Number(e.target.value))}
+                                    value={item?.base_price ?? ""}
+                                    onChange={(e) => updateField("base_price", e.target.value === "" ? "" : Number(e.target.value))}
                                     placeholder="0"
-                                    className={`w-20 text-right outline-none bg-transparent ${item?.price === "" || item?.price === null || item?.price === undefined ? "border-b border-red-500 text-red-500" : "text-gray-800"
+                                    className={`w-20 text-right outline-none bg-transparent ${item?.base_price === "" || item?.base_price === null || item?.base_price === undefined ? "border-b border-red-500 text-red-500" : "text-gray-800"
                                         }`}
                                 />
                             </div>
@@ -293,6 +315,9 @@ export default function MenuItemRow({
                                         placeholder="Property (e.g. Size)"
                                         className="text-[11px] font-bold bg-white border border-gray-200 rounded px-2 py-1 outline-none focus:border-primary w-[140px] shadow-sm"
                                     />
+                                    {group.property_id?.toString().startsWith("temp-") && (
+                                        <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-wider shrink-0">NEW</span>
+                                    )}
                                     <button
                                         onClick={() => addVariantOption(gIdx)}
                                         className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded hover:bg-primary/20 flex items-center gap-1 transition-colors"
@@ -312,6 +337,11 @@ export default function MenuItemRow({
                                 <div className="flex flex-wrap gap-2">
                                     {(group.options || []).map((opt, oIdx) => (
                                         <div key={oIdx} className="flex items-stretch bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 transition-all">
+                                            {opt.option_id?.toString().startsWith("temp-") && (
+                                                <div className="bg-green-500 flex items-center justify-center px-1.5 border-r border-green-600">
+                                                    <span className="text-white text-[9px] font-bold uppercase tracking-wider shrink-0">NEW</span>
+                                                </div>
+                                            )}
                                             <input
                                                 type="text"
                                                 value={opt.option_name || ""}

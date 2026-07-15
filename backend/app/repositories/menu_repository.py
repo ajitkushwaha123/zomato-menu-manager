@@ -4,6 +4,12 @@ class MenuRepository:
     def __init__(self):
         self.collection = db.menus
 
+    def get_menu(self, res_id: str, platform: str = "swiggy") -> list:
+        doc = self.collection.find_one({"resId": res_id, "platform": platform})
+        if doc and isinstance(doc.get("menu"), list):
+            return doc["menu"]
+        return []
+
     def upsert_menu(self, res_id: str, platform: str, menu_array: list, append: bool = False):
         import datetime
         now = datetime.datetime.utcnow()

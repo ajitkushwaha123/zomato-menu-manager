@@ -59,6 +59,7 @@ export async function GET(req) {
         url.searchParams.set("q", query);
         url.searchParams.set("page", String(page));
         url.searchParams.set("limit", String(limit));
+        // url.searchParams.set("latest", "true");
 
         // Only pass approved=true for Zomato, skip for Swiggy
         if (platform === "zomato") {

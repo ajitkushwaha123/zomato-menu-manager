@@ -68,8 +68,11 @@ export default function SubCategoryList({
                                     </div>
 
                                     <div className="min-w-0 flex-1">
-                                        <p className={cn("truncate text-sm font-medium", isActive ? "text-foreground" : "text-muted-foreground")}>
-                                            {sub.name}
+                                        <p className={cn("truncate text-sm font-medium flex items-center gap-2", isActive ? "text-foreground" : "text-muted-foreground")}>
+                                            <span className="truncate">{sub.name}</span>
+                                            {sub.id?.toString().startsWith("temp-") && (
+                                                <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-wider shrink-0">NEW</span>
+                                            )}
                                         </p>
                                         <p className="text-xs text-muted-foreground">Subcategory</p>
                                     </div>

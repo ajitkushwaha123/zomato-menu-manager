@@ -14,7 +14,7 @@ export async function POST(req, { params }) {
         await dbConnect();
 
         const { resId } = await params;
-        const { value } = await req.json();
+        const { value, roundTo9 = true } = await req.json();
 
         if (!resId) {
             return NextResponse.json(
@@ -80,31 +80,23 @@ export async function POST(req, { params }) {
                     subCategory.items?.forEach(
                         (item) => {
                             let isUpdated = false;
-                            const currentPrice =
-                                Number(item?.price);
+                            const rawPrice = item?.base_price ?? item?.price;
+                            const currentPrice = Number(rawPrice);
 
                             if (
-                                !isNaN(currentPrice) && item?.price !== undefined && item?.price !== null && item?.price !== ""
+                                !isNaN(currentPrice) && rawPrice !== undefined && rawPrice !== null && String(rawPrice).trim() !== ""
                             ) {
                                 let newPrice;
 
-                                if (
-                                    isPercentage
-                                ) {
-                                    newPrice =
-                                        currentPrice +
-                                        (currentPrice *
-                                            numericValue) /
-                                        100;
+                                if (isPercentage) {
+                                    newPrice = currentPrice + (currentPrice * numericValue) / 100;
                                 } else {
-                                    newPrice =
-                                        currentPrice +
-                                        numericValue;
+                                    newPrice = currentPrice + numericValue;
                                 }
 
-                                item.price = roundToNearest9(
-                                    Math.max(0, newPrice)
-                                );
+                                const finalPrice = roundTo9 ? roundToNearest9(Math.max(0, newPrice)) : Math.round(Math.max(0, newPrice));
+                                item.base_price = finalPrice;
+                                if (item.price !== undefined) delete item.price; // Clean up old price if any
 
                                 isUpdated = true;
                             }
@@ -121,9 +113,7 @@ export async function POST(req, { params }) {
                                                 } else {
                                                     newOptPrice = currentOptPrice + numericValue;
                                                 }
-                                                opt.price = roundToNearest9(
-                                                    Math.max(0, newOptPrice)
-                                                );
+                                                opt.price = roundTo9 ? roundToNearest9(Math.max(0, newOptPrice)) : Math.round(Math.max(0, newOptPrice));
                                                 isUpdated = true;
                                             }
                                         });

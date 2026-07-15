@@ -23,20 +23,16 @@ const buildCatalogueLookup = (catalogueWrappers = []) => {
     return map;
 };
 
-const getPriceRange = (variantWrappers = []) => {
+const getBasePrice = (variantWrappers = []) => {
     const prices = variantWrappers
         .map((vw) => getDeliveryPrice(vw?.variantPrices))
         .filter((p) => typeof p === "number" && p > 0);
 
     if (prices.length === 0) {
-        return { price: 0, min_price: 0, max_price: 0 };
+        return 0;
     }
 
-    return {
-        price: prices[0],
-        min_price: Math.min(...prices),
-        max_price: Math.max(...prices),
-    };
+    return Math.min(...prices);
 };
 
 const parseItemVariants = (catalogueWrapper) => {
@@ -84,8 +80,10 @@ const parseItemVariants = (catalogueWrapper) => {
                         option_id: value?.propertyValueId || "",
                         variant_id: matched?.variantId || "",
                         price: matched?.price || 0,
-                        is_default: (value?.order ?? index + 1) === 1,
                     };
+                }).sort((a, b) => a.price - b.price).map((opt, i) => {
+                    opt.is_default = (i === 0);
+                    return opt;
                 }),
             };
         })
@@ -95,7 +93,7 @@ const parseItemVariants = (catalogueWrapper) => {
 const buildItem = (catalogueWrapper, onHoldItems = {}) => {
     const catalogue = catalogueWrapper?.catalogue || {};
     const tags = catalogueWrapper?.catalogueTags || [];
-    const { price, min_price, max_price } = getPriceRange(
+    const base_price = getBasePrice(
         catalogueWrapper?.variantWrappers
     );
 
@@ -107,9 +105,7 @@ const buildItem = (catalogueWrapper, onHoldItems = {}) => {
         temp_id: catalogue?.tempReferenceId || "",
         name: catalogue?.name || "",
         description: catalogue?.description || "",
-        price,
-        min_price,
-        max_price,
+        base_price,
         is_veg: tags.includes("egg") ? "EGG" : tags.includes("non-veg") ? "NON_VEG" : "VEG",
         packing_charges: 0,
         media: catalogue?.media || [],

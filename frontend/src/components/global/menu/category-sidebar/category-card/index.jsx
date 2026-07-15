@@ -96,8 +96,11 @@ export default function CategoryCard({
                             </div>
 
                             <div className="min-w-0 flex-1">
-                                <p className={cn("truncate text-sm font-semibold", isCategoryActive ? "text-primary" : "text-foreground")}>
-                                    {category.name}
+                                <p className={cn("truncate text-sm font-semibold flex items-center gap-2", isCategoryActive ? "text-primary" : "text-foreground")}>
+                                    <span className="truncate">{category.name}</span>
+                                    {category.id?.toString().startsWith("temp-") && (
+                                        <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-wider shrink-0">NEW</span>
+                                    )}
                                 </p>
                                 <p className="text-[10px] text-muted-foreground">
                                     {category.subcategories?.length ?? 0} subcategories

@@ -18,4 +18,7 @@ class MenuUploadJob(BaseModel):
     completed_at: datetime | None = None
     error: str | None = None
 
+    progress: int | None = None
+    step: str | None = None
+
     chain_outputs: dict = Field(default_factory=dict, description="Outputs from various AI chain steps")

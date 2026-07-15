@@ -21,53 +21,40 @@ export default function UploadMenuEditor() {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadStatus, setUploadStatus] = useState(null); // 'uploading', 'processing', 'completed', 'error'
     const [progress, setProgress] = useState(null);
-    const [isFetchingInitialStatus, setIsFetchingInitialStatus] = useState(true);
-
-    // Initial status check
-    useEffect(() => {
-        if (!activeResId) return;
-        const checkInitialStatus = async () => {
-            try {
-                const { data } = await axios.get(`/api/menu/${activeResId}/bulk-editor/document-parser/status`);
-                if (data?.success && data?.document) {
-                    setProgress(data.document);
-                    if (data.document.status === "processing") {
-                        setUploadStatus("processing");
-                    } else if (data.document.status === "completed") {
-                        setUploadStatus("completed");
-                    }
-                }
-            } catch (error) {
-                console.error("No active processing found");
-            } finally {
-                setIsFetchingInitialStatus(false);
-            }
-        };
-        checkInitialStatus();
-    }, [activeResId]);
+    const [jobId, setJobId] = useState(null);
 
     // Polling logic
     useEffect(() => {
         let interval;
-        if (uploadStatus === "processing" && activeResId) {
+        if (uploadStatus === "processing" && jobId) {
             interval = setInterval(async () => {
                 try {
-                    const { data } = await axios.get(`/api/menu/${activeResId}/bulk-editor/document-parser/status`);
-                    if (data?.success && data?.document) {
-                        setProgress(data.document);
-                        if (data.document.status === "completed") {
+                    const { data } = await axios.get(`/api/backend/menu/upload/${jobId}`);
+                    if (data?.success && data?.data) {
+                        const job = data.data;
+                        if (job.status === "processing" || job.status === "queued") {
+                            setUploadStatus("processing");
+                            setProgress({
+                                value: job.progress || 0,
+                                step: job.step || "Initializing..."
+                            });
+                        } else if (job.status === "completed") {
                             setUploadStatus("completed");
                             clearInterval(interval);
                             notification.success("Menu parsing completed successfully!", { duration: 5000 });
+                        } else if (job.status === "failed") {
+                            setUploadStatus("error");
+                            clearInterval(interval);
+                            notification.error(job.error || "Menu parsing failed.", { duration: 5000 });
                         }
                     }
                 } catch (error) {
                     console.error("Error fetching status:", error);
                 }
-            }, 5000);
+            }, 3000);
         }
         return () => clearInterval(interval);
-    }, [uploadStatus, activeResId, notification]);
+    }, [uploadStatus, jobId, notification]);
 
     const processFiles = async (selectedFiles) => {
         setIsProcessingLocalFiles(true);
@@ -155,14 +142,16 @@ export default function UploadMenuEditor() {
 
         try {
             const formData = new FormData();
+            formData.append("restaurant_id", activeResId);
             imagesToUpload.forEach(img => formData.append("files", img.file));
 
-            const { data } = await axios.post(`/api/menu/${activeResId}/bulk-editor/document-parser/upload`, formData, {
+            const { data } = await axios.post(`/api/backend/menu/upload`, formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
 
-            if (data.success) {
+            if (data.success && data.data?.job_id) {
                 notification.success("Files uploaded. Processing started in background.", { duration: 5000 });
+                setJobId(data.data.job_id);
                 setUploadStatus("processing");
                 setImagesToUpload([]); // Clear preview
             } else {
@@ -177,13 +166,7 @@ export default function UploadMenuEditor() {
         }
     };
 
-    if (isFetchingInitialStatus) {
-        return (
-            <div className="flex-1 overflow-auto bg-gray-50/50 p-6 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-        );
-    }
+
 
     return (
         <div className="flex-1 overflow-auto bg-gray-50/50 p-6 flex flex-col relative">
@@ -204,16 +187,16 @@ export default function UploadMenuEditor() {
                             <p className="text-sm text-gray-500 mt-1 mb-4">
                                 Our AI is analyzing the menu pages. This might take a few minutes.
                             </p>
-                            {progress && progress.totalPages > 0 && (
-                                <div className="w-full max-w-md">
+                            {progress && (
+                                <div className="w-full max-w-md mt-4">
                                     <div className="flex justify-between text-xs font-semibold text-gray-600 mb-1">
-                                        <span>{progress.processedPages} / {progress.totalPages} Pages Processed</span>
-                                        <span>{Math.round((progress.processedPages / progress.totalPages) * 100)}%</span>
+                                        <span>{progress.step}</span>
+                                        <span>{progress.value}%</span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-2">
                                         <div 
                                             className="bg-primary h-2 rounded-full transition-all duration-500"
-                                            style={{ width: `${(progress.processedPages / progress.totalPages) * 100}%` }}
+                                            style={{ width: `${progress.value}%` }}
                                         ></div>
                                     </div>
                                 </div>

@@ -67,33 +67,153 @@ class SemanticNormalizationNode:
             response_dict
         )
         
-        # Map response to expected menu schema
+        # Map response to expected menu schema and deep-merge
         import uuid
-        menu_array = []
-        for cat in response_dict.get("category", []):
-            mapped_cat = {
-                "id": f"temp-{uuid.uuid4().hex[:8]}",
-                "name": cat.get("name", ""),
-                "temp_id": "",
-                "sub_category": []
-            }
-            for sub in cat.get("sub_category", []):
-                mapped_sub = {
-                    "id": f"temp-{uuid.uuid4().hex[:8]}",
-                    "name": sub.get("name", ""),
-                    "temp_id": "",
-                    "items": []
+        import re
+        
+        def extract_price(val):
+            if isinstance(val, (int, float)):
+                return float(val)
+            if not val:
+                return 0.0
+            match = re.search(r'\d+(?:\.\d+)?', str(val).replace(',', ''))
+            return float(match.group()) if match else 0.0
+
+        def prepare_items(items_list):
+            prepared = []
+            for item in items_list:
+                raw_price = item.get("base_price") if item.get("base_price") is not None else item.get("price")
+                final_price = extract_price(raw_price)
+                
+                prepared_variants = []
+                for v in item.get("variants", []):
+                    options = []
+                    for opt in v.get("options", []):
+                        opt_price = extract_price(opt.get("price"))
+                        opt_name = opt.get("name") or opt.get("option_name") or ""
+                        
+                        new_opt = {
+                            **opt,
+                            "option_name": opt_name,
+                            "option_id": f"temp-{uuid.uuid4()}",
+                            "variant_id": f"temp-{uuid.uuid4()}",
+                            "price": opt_price
+                        }
+                        if "name" in new_opt:
+                            del new_opt["name"]
+                            
+                        options.append(new_opt)
+                        
+                    # Sort options by price (lowest first)
+                    options.sort(key=lambda x: x["price"])
+                    
+                    # Set first option as default
+                    for i, opt in enumerate(options):
+                        opt["is_default"] = (i == 0)
+                        
+                    prepared_variants.append({
+                        **v,
+                        "property_id": f"temp-{uuid.uuid4()}",
+                        "options": options
+                    })
+
+                if prepared_variants:
+                    all_prices = []
+                    for v in prepared_variants:
+                        for opt in v["options"]:
+                            if isinstance(opt.get("price"), (int, float)):
+                                all_prices.append(opt["price"])
+                    if all_prices:
+                        final_price = min(all_prices)
+                        
+                meat_types = item.pop("meat_types", [])
+                new_item = {
+                    **item,
+                    "id": f"temp-{uuid.uuid4()}",
+                    "base_price": final_price,
+                    "description": item.get("description", ""),
+                    "is_available": item.get("is_available", True),
+                    "variants": prepared_variants,
+                    "meatTypes": meat_types
                 }
-                for item in sub.get("items", []):
-                    item["id"] = f"temp-{uuid.uuid4().hex[:8]}"
-                    mapped_sub["items"].append(item)
-                mapped_cat["sub_category"].append(mapped_sub)
-            menu_array.append(mapped_cat)
+                
+                if "is_veg" not in new_item:
+                    new_item["is_veg"] = "VEG"
+                    
+                new_item.pop("price", None)
+                new_item.pop("min_price", None)
+                new_item.pop("max_price", None)
+                prepared.append(new_item)
+            return prepared
+
+        prepared_categories = []
+        for cat in response_dict.get("category", []):
+            sub_categories = cat.get("sub_category", [])
             
-        # Save to menu document
+            # If a category has direct items, move them to a 'General' subcategory
+            cat_items = cat.get("items", [])
+            if cat_items:
+                sub_categories.append({
+                    "name": cat.get("name", "General"),
+                    "items": cat_items
+                })
+                
+            mapped_cat = {
+                **cat,
+                "id": f"temp-{uuid.uuid4()}",
+                "sub_category": [],
+                "items": []
+            }
+            
+            for sub in sub_categories:
+                mapped_sub = {
+                    **sub,
+                    "id": f"temp-{uuid.uuid4()}",
+                    "items": prepare_items(sub.get("items", []))
+                }
+                mapped_cat["sub_category"].append(mapped_sub)
+                
+            prepared_categories.append(mapped_cat)
+
         from app.repositories.menu_repository import MenuRepository
         menu_repo = MenuRepository()
-        menu_repo.upsert_menu(job.restaurant_id, "swiggy", menu_array, append=True)
+        
+        # Deep merge with existing menu
+        existing_menu = menu_repo.get_menu(job.restaurant_id, "zomato")
+        
+        for new_cat in prepared_categories:
+            new_cat_name = str(new_cat.get("name", "")).lower()
+            existing_cat = next(
+                (c for c in existing_menu 
+                 if str(c.get("name", "")).lower() == new_cat_name 
+                 and str(c.get("status", "")) not in ["delete", "deleted"]),
+                None
+            )
+            
+            if existing_cat:
+                if "sub_category" not in existing_cat:
+                    existing_cat["sub_category"] = []
+                    
+                for new_sub in new_cat.get("sub_category", []):
+                    new_sub_name = str(new_sub.get("name", "")).lower()
+                    existing_sub = next(
+                        (s for s in existing_cat["sub_category"]
+                         if str(s.get("name", "")).lower() == new_sub_name
+                         and str(s.get("status", "")) not in ["delete", "deleted"]),
+                        None
+                    )
+                    
+                    if existing_sub:
+                        if "items" not in existing_sub:
+                            existing_sub["items"] = []
+                        existing_sub["items"].extend(new_sub.get("items", []))
+                    else:
+                        existing_cat["sub_category"].append(new_sub)
+            else:
+                existing_menu.append(new_cat)
+                
+        # Overwrite the document menu array with the fully merged menu
+        menu_repo.upsert_menu(job.restaurant_id, "zomato", existing_menu, append=False)
         
         self.repository.update_status(
             job_id,

@@ -88,7 +88,7 @@ export function buildVariantWrappersBuilder(properties, allOptionsArrays, newIte
 
             let price = combo.reduce((sum, opt) => sum + (opt.price || 0), 0);
             if (properties.length === 1) {
-                price = combo[0].price ?? newItem.price ?? 0;
+                price = combo[0].price ?? newItem.base_price ?? 0;
             }
 
             const varId = generateTempReferenceId();
@@ -148,7 +148,7 @@ export function buildVariantWrappersBuilder(properties, allOptionsArrays, newIte
                     isVisible: true,
                     service: "delivery",
                     tempReferenceId: generateTempReferenceId(),
-                    price: newItem.price ?? 0,
+                    price: newItem.base_price ?? 0,
                 },
             ],
         });
@@ -493,9 +493,9 @@ export function updateBasePrices(variantWrappers, dbItem) {
         if (newVWrapper.variantPrices) {
             newVWrapper.variantPrices = newVWrapper.variantPrices.map(vp => ({
                 ...vp,
-                price: dbItem.price ?? vp.price,
-                basePrice: dbItem.price ?? vp.basePrice,
-                maxAllowedPrice: dbItem.price ?? vp.maxAllowedPrice,
+                price: dbItem.base_price ?? vp.price,
+                basePrice: dbItem.base_price ?? vp.basePrice,
+                maxAllowedPrice: dbItem.base_price ?? vp.maxAllowedPrice,
             }));
         }
         return newVWrapper;
@@ -577,7 +577,7 @@ export function getUpdatedCatalogueData(catalogueWrappers, dbMenu = []) {
                 let existingVar = (newWrapper.variantWrappers && newWrapper.variantWrappers.length > 0) ? newWrapper.variantWrappers[0] : {};
                 let existingPrice = (existingVar.variantPrices && existingVar.variantPrices.length > 0) ? existingVar.variantPrices[0] : {};
 
-                let basePrice = dbItem.price !== undefined ? dbItem.price : (existingPrice.price || 0);
+                let basePrice = dbItem.base_price !== undefined ? dbItem.base_price : (existingPrice.price || 0);
 
                 // Do not reuse the old variantId because it belonged to a property combination
                 let baseVarObj = { tempReferenceId: generateTempReferenceId() };

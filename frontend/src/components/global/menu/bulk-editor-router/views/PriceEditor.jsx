@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Upload, X, Plus, Trash2, Calculator, Loader2 } from "lucide-react";
+import { Upload, X, Plus, Trash2, Calculator, Loader2, CheckCircle2 } from "lucide-react";
 import api from "@/lib/api/axios";
 import { useMenu } from "@/store/hooks/useMenu";
 import useNotification from "@/store/hooks/useNotification";
@@ -26,6 +26,7 @@ export default function PriceEditor({ allItems, updateItem }) {
     const [bulkMode, setBulkMode] = useState("percentage"); // flat or percentage
     const [bulkAction, setBulkAction] = useState("increase"); // increase or decrease
     const [bulkValue, setBulkValue] = useState("");
+    const [roundTo9, setRoundTo9] = useState(true);
     const [isSubmittingBulk, setIsSubmittingBulk] = useState(false);
 
     const submitBulkUpdate = async () => {
@@ -43,7 +44,8 @@ export default function PriceEditor({ allItems, updateItem }) {
             }
 
             const { data } = await api.post(`/api/menu/${activeResId}/bulk-editor/price`, {
-                value: finalValue
+                value: finalValue,
+                roundTo9
             });
             
             if (!data.success) {
@@ -207,8 +209,8 @@ export default function PriceEditor({ allItems, updateItem }) {
                                         <td className="p-3 align-top">
                                             <input
                                                 type="number"
-                                                value={item.price ?? ""}
-                                                onChange={(e) => updateItem({ itemId: item.id, updates: { price: e.target.value === "" ? "" : Number(e.target.value) } })}
+                                                value={item.base_price ?? ""}
+                                                onChange={(e) => updateItem({ itemId: item.id, updates: { base_price: e.target.value === "" ? "" : Number(e.target.value) } })}
                                                 onKeyDown={handleKeyDown}
                                                 className="price-input-field w-24 border rounded-md px-2 py-1 outline-none focus:border-primary text-sm font-semibold bg-white shadow-sm"
                                                 placeholder="0"
@@ -312,7 +314,7 @@ export default function PriceEditor({ allItems, updateItem }) {
                     <DialogHeader>
                         <DialogTitle>Bulk Price Update</DialogTitle>
                         <DialogDescription>
-                            Apply a flat or percentage increase/decrease to all items and variants in this menu. Note: Prices will automatically round to the nearest ending 9.
+                            Apply a flat or percentage increase/decrease to all items and variants in this menu.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -369,6 +371,21 @@ export default function PriceEditor({ allItems, updateItem }) {
                                 </span>
                             </div>
                         </div>
+
+                        <label className="flex items-center gap-2 cursor-pointer mt-4 group">
+                            <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${roundTo9 ? 'bg-primary border-primary text-white' : 'border-gray-300 bg-white group-hover:border-primary'}`}>
+                                {roundTo9 && <CheckCircle2 size={14} />}
+                            </div>
+                            <input
+                                type="checkbox"
+                                className="hidden"
+                                checked={roundTo9}
+                                onChange={(e) => setRoundTo9(e.target.checked)}
+                            />
+                            <span className="text-sm font-medium text-gray-700 select-none">
+                                Round to nearest 9 (e.g. ₹299 instead of ₹300)
+                            </span>
+                        </label>
                     </div>
 
                     <DialogFooter>

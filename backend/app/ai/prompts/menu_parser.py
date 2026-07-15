@@ -10,6 +10,7 @@ Rules
 2. category is mandatory.
 3. If sub_category does not exist,
    use category.
+   CRITICAL: Ensure sub-category names are meaningful and descriptive of the food type. DO NOT use generic dietary terms like "Veg" or "Non-Veg" as sub-categories. For example, if the category is "Main Course", it is OK for the sub-category to also be "Main Course", but NEVER use "Veg" or "Non-Veg" as a sub-category name.
 4. description should only be returned
    if present.
 5. If item has only one price

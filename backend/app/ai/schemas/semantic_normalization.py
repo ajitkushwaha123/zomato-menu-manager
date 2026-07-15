@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 class NormalizationItem(BaseModel):
     id: str
@@ -11,6 +11,7 @@ class NormalizedItem(BaseModel):
     id: str
     name: str
     is_veg: str
+    meat_types: Optional[List[str]] = []
 
 class SubCategory(BaseModel):
     name: str

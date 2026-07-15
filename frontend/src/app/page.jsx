@@ -1,6 +1,5 @@
 "use client";
 
-import CategorySidebar from "@/components/global/menu/category-sidebar";
 import { MenuEditorHeader } from "@/components/global/menu/header";
 import { useMenu } from "@/store/hooks/useMenu";
 import useNotification from "@/store/hooks/useNotification";
@@ -35,7 +34,7 @@ const MenuPage = () => {
 
     if (isLoading) {
         return (
-            <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-50/50">
+            <div className="h-full w-full flex flex-col items-center justify-center bg-gray-50/50">
                 <Loader2 className="w-10 h-10 animate-spin text-red-500 mb-4" />
                 <p className="text-gray-500 font-medium animate-pulse">Loading menu editor...</p>
             </div>
@@ -43,10 +42,9 @@ const MenuPage = () => {
     }
 
     return (
-        <div className="flex flex-col h-screen bg-white overflow-hidden">
+        <div className="flex flex-col h-full bg-white overflow-hidden relative">
             <MenuEditorHeader onSave={handleSaveMenu} isSaving={isSaving} />
             <div className="flex-1 flex overflow-hidden">
-                <CategorySidebar />
                 {activeView === "BULK" ? (
                     <BulkEditorRouter
                         activeBulkMode={activeBulkMode}
