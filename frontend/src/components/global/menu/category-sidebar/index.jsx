@@ -150,13 +150,6 @@ export default function CategorySidebar() {
                             <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-2">Edit Modes</div>
 
                             <button
-                                onClick={() => setActiveBulkMode("FULL")}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${activeBulkMode === "FULL" ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-100"
-                                    }`}
-                            >
-                                <Layers className="w-4 h-4" /> Full Menu Editor
-                            </button>
-                            <button
                                 onClick={() => setActiveBulkMode("PRICE")}
                                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${activeBulkMode === "PRICE" ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-100"
                                     }`}

@@ -52,7 +52,7 @@ const initialState = {
     restaurantName: '',
     activeResId: null,
     activeView: 'MENU',     // 'MENU' or 'BULK'
-    activeBulkMode: 'FULL', // 'FULL', 'PRICE', 'DESCRIPTION', 'IMAGE'
+    activeBulkMode: 'PRICE', // 'PRICE', 'DESCRIPTION', 'IMAGE'
     activeCategory: null,   // Category ID
     activeSubCategory: null,// Subcategory ID
     isImageSidebarOpen: false,
@@ -365,7 +365,32 @@ const menuSlice = createSlice({
                 if (categoryIds.includes(cat.id) && cat.id !== targetId) {
                     if (cat.sub_category && cat.sub_category.length > 0) {
                         if (!targetCat.sub_category) targetCat.sub_category = [];
-                        targetCat.sub_category.push(...cat.sub_category);
+                        
+                        cat.sub_category.forEach(sub => {
+                            const existingSub = targetCat.sub_category.find(s => 
+                                s.name?.toLowerCase().trim() === sub.name?.toLowerCase().trim() &&
+                                s.status !== 'delete' && s.status !== 'deleted'
+                            );
+                            
+                            if (existingSub) {
+                                // Subcategory with same name already exists in target category.
+                                // Merge items into the existing subcategory to prevent duplicate subcategories.
+                                if (sub.items && sub.items.length > 0) {
+                                    if (!existingSub.items) existingSub.items = [];
+                                    sub.items.forEach(item => {
+                                        const existingItem = existingSub.items.find(i => 
+                                            i.name?.toLowerCase().trim() === item.name?.toLowerCase().trim() &&
+                                            i.status !== 'delete' && i.status !== 'deleted'
+                                        );
+                                        if (!existingItem) {
+                                            existingSub.items.push(item);
+                                        }
+                                    });
+                                }
+                            } else {
+                                targetCat.sub_category.push(sub);
+                            }
+                        });
                     }
                     if (String(cat.id).startsWith('temp-')) {
                         state.menuData = state.menuData.filter(c => c.id !== cat.id);
@@ -399,7 +424,16 @@ const menuSlice = createSlice({
                         if (subCategoryIds.includes(sub.id) && sub.id !== targetId) {
                             if (sub.items && sub.items.length > 0) {
                                 if (!targetSub.items) targetSub.items = [];
-                                targetSub.items.push(...sub.items);
+                                
+                                sub.items.forEach(item => {
+                                    const existingItem = targetSub.items.find(i => 
+                                        i.name?.toLowerCase().trim() === item.name?.toLowerCase().trim() &&
+                                        i.status !== 'delete' && i.status !== 'deleted'
+                                    );
+                                    if (!existingItem) {
+                                        targetSub.items.push(item);
+                                    }
+                                });
                             }
                             if (String(sub.id).startsWith('temp-')) {
                                 cat.sub_category.splice(i, 1);

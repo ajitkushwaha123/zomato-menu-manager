@@ -27,6 +27,8 @@ Rules
 
    ! Important In case of Momos do not club vairants based steam , fry , tandoori or gravy , instead create them as separate items. and simply name them like Chicken Steam Momos , Chicken Fried Momos
 
+   ! CRITICAL: NEVER club Veg and Non-Veg items together as variants of a single item! For example, if you see "Hakka Noodles" or "Fried Rice" with options "Veg" and "Chicken", YOU MUST CREATE TWO SEPARATE ITEMS ("Veg Hakka Noodles" and "Chicken Hakka Noodles"). NEVER create a variant property named "Type", "Meat", or "Veg/Non-Veg". The ONLY permitted variants are Portion, Size, Volume, and Pieces.
+
 8. Every variant must contain
    at least two options.
 

@@ -25,6 +25,7 @@ export default function ImageSidebar() {
     );
 
     const [searchQuery, setSearchQuery] = useState("");
+    const [searchSource, setSearchSource] = useState("dataset"); // 'dataset' | 'google'
     const [images, setImages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [uploadStatuses, setUploadStatuses] = useState({}); // { [imageId]: 'uploading' | 'approved' | 'rejected' }
@@ -35,11 +36,11 @@ export default function ImageSidebar() {
     useEffect(() => {
         if (isImageSidebarOpen && activeImageSearchItem?.name) {
             setSearchQuery(activeImageSearchItem.name);
-            fetchImages(activeImageSearchItem.name, 1);
+            fetchImages(activeImageSearchItem.name, 1, searchSource);
         }
-    }, [isImageSidebarOpen, activeImageSearchItem]);
+    }, [isImageSidebarOpen, activeImageSearchItem, searchSource]);
 
-    const fetchImages = async (query, pageNum = 1) => {
+    const fetchImages = async (query, pageNum = 1, source = searchSource) => {
         if (!query.trim()) {
             setImages([]);
             setHasMore(false);
@@ -49,27 +50,32 @@ export default function ImageSidebar() {
         try {
             if (pageNum === 1) {
                 setLoading(true);
+                setImages([]);
             } else {
                 setIsLoadingMore(true);
             }
 
-            const res = await axios.get(
-                `/api/image/search?q=${encodeURIComponent(query)}&page=${pageNum}&limit=48`,
-            );
+            let endpoint = `/api/image/search?q=${encodeURIComponent(query)}&page=${pageNum}&limit=48`;
+
+            if (source === "swiggy") {
+                endpoint = `/api/image/swiggy-search?q=${encodeURIComponent(query)}&page=${pageNum}&limit=48`;
+            }
+
+            const res = await axios.get(endpoint);
 
             if (res.data.success) {
                 if (pageNum === 1) {
-                    setImages(res.data.data);
+                    setImages(res.data.data || []);
                 } else {
                     setImages((prev) => {
                         const existingIds = new Set(prev.map((img) => img._id));
-                        const newImages = res.data.data.filter(
+                        const newImages = (res.data.data || []).filter(
                             (img) => !existingIds.has(img._id),
                         );
                         return [...prev, ...newImages];
                     });
                 }
-                setHasMore(res.data.hasMore);
+                setHasMore(res.data.hasMore || false);
                 setPage(pageNum);
             }
         } catch (error) {
@@ -83,6 +89,19 @@ export default function ImageSidebar() {
     const handleSearchChange = (e) => {
         const query = e.target.value;
         setSearchQuery(query);
+
+        // Instant preview for pasted URLs
+        if (query.trim().startsWith("http://") || query.trim().startsWith("https://")) {
+            setImages([{
+                _id: "pasted_url",
+                title: "Pasted Image URL",
+                image_url: query.trim(),
+                category: "Manual URL"
+            }]);
+            setHasMore(false);
+            return;
+        }
+
         // Debounce simple version:
         if (query.trim().length > 2) {
             fetchImages(query, 1);
@@ -97,14 +116,14 @@ export default function ImageSidebar() {
             !loading &&
             !isLoadingMore
         ) {
-            fetchImages(searchQuery, page + 1);
+            fetchImages(searchQuery, page + 1, searchSource);
         }
     };
 
     const handleSelectImage = async (imageDoc) => {
         if (!activeImageSearchItem || !imageDoc.image_url) return;
         const imgId = imageDoc._id || imageDoc.id || imageDoc.image_url;
-        
+
         setUploadStatuses(prev => ({ ...prev, [imgId]: 'uploading' }));
         dispatch(setImageUploadStatus({ itemId: activeImageSearchItem.id, status: "uploading" }));
 
@@ -122,7 +141,7 @@ export default function ImageSidebar() {
                 );
                 toast.success("Image approved & applied successfully!");
                 setTimeout(() => {
-                    setUploadStatuses(prev => { const newMap = {...prev}; delete newMap[imgId]; return newMap; });
+                    setUploadStatuses(prev => { const newMap = { ...prev }; delete newMap[imgId]; return newMap; });
                     dispatch(setImageUploadStatus({ itemId: activeImageSearchItem.id, status: null }));
                 }, 3000);
             } else {
@@ -130,7 +149,7 @@ export default function ImageSidebar() {
                 dispatch(setImageUploadStatus({ itemId: activeImageSearchItem.id, status: "rejected" }));
                 toast.error(result.message);
                 setTimeout(() => {
-                    setUploadStatuses(prev => { const newMap = {...prev}; delete newMap[imgId]; return newMap; });
+                    setUploadStatuses(prev => { const newMap = { ...prev }; delete newMap[imgId]; return newMap; });
                     dispatch(setImageUploadStatus({ itemId: activeImageSearchItem.id, status: null }));
                 }, 4000);
             }
@@ -140,7 +159,7 @@ export default function ImageSidebar() {
             setUploadStatuses(prev => ({ ...prev, [imgId]: 'rejected' }));
             dispatch(setImageUploadStatus({ itemId: activeImageSearchItem.id, status: "rejected" }));
             setTimeout(() => {
-                setUploadStatuses(prev => { const newMap = {...prev}; delete newMap[imgId]; return newMap; });
+                setUploadStatuses(prev => { const newMap = { ...prev }; delete newMap[imgId]; return newMap; });
                 dispatch(setImageUploadStatus({ itemId: activeImageSearchItem.id, status: null }));
             }, 4000);
         }
@@ -172,98 +191,120 @@ export default function ImageSidebar() {
                 </Button>
             </div>
 
-            <div className="p-4 border-b border-border/50 bg-slate-50/50">
+            <div className="p-4 border-b border-border/50 bg-slate-50/50 flex flex-col gap-3">
+                <div className="flex bg-slate-200/50 p-1 rounded-lg w-full">
+                    <button
+                        onClick={() => setSearchSource("dataset")}
+                        className={cn(
+                            "flex-1 text-xs font-semibold py-1.5 rounded-md transition-all",
+                            searchSource === "dataset" ? "bg-white shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        Internal Dataset
+                    </button>
+                    <button
+                        onClick={() => setSearchSource("swiggy")}
+                        className={cn(
+                            "flex-1 text-xs font-semibold py-1.5 rounded-md transition-all flex items-center justify-center gap-1.5",
+                            searchSource === "swiggy" ? "bg-white shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        <Search size={12} />
+                        Swiggy Images
+                    </button>
+                </div>
                 <div className="relative">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         value={searchQuery}
                         onChange={handleSearchChange}
-                        placeholder="Search dataset..."
+                        placeholder={searchSource === "swiggy" ? "Search Swiggy Images or paste URL..." : "Search dataset..."}
                         className="pl-9 bg-white border-border/50 rounded-xl"
                     />
                 </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4" onScroll={handleScroll}>
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center h-40 gap-3">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary/50" />
-                        <p className="text-sm text-muted-foreground">
-                            Searching dataset...
-                        </p>
-                    </div>
-                ) : images.length > 0 ? (
-                    <div className="pb-6">
-                        <div className="grid grid-cols-4 gap-3">
-                            {images.map((img) => (
-                                <div
-                                    key={img._id}
-                                    onClick={() => handleSelectImage(img)}
-                                    className={cn(
-                                        "group relative rounded-xl overflow-hidden border border-border/50 cursor-pointer bg-white transition-all hover:border-primary/40 hover:shadow-md",
-                                        uploadStatuses[img._id || img.id || img.image_url] === 'uploading' &&
-                                        "opacity-70 pointer-events-none ring-2 ring-primary",
-                                    )}
-                                >
-                                    <div className="aspect-square w-full bg-slate-100 relative">
-                                        <img
-                                            src={img.image_url}
-                                            alt={img.title}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                            loading="lazy"
-                                        />
-                                        {/* State Overlays */}
-                                        {uploadStatuses[img._id || img.id || img.image_url] === 'uploading' && (
-                                            <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center animate-in fade-in duration-200">
-                                                <Loader2 className="animate-spin text-primary mb-2" size={24} />
-                                                <span className="text-[10px] font-semibold text-neutral-700 tracking-wide uppercase">Validating...</span>
-                                            </div>
+                {(searchSource === "dataset" || searchSource === "swiggy") && (
+                    loading ? (
+                        <div className="flex flex-col items-center justify-center h-40 gap-3">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary/50" />
+                            <p className="text-sm text-muted-foreground">
+                                Searching dataset...
+                            </p>
+                        </div>
+                    ) : images.length > 0 ? (
+                        <div className="pb-6">
+                            <div className="grid grid-cols-4 gap-3">
+                                {images.map((img) => (
+                                    <div
+                                        key={img._id}
+                                        onClick={() => handleSelectImage(img)}
+                                        className={cn(
+                                            "group relative rounded-xl overflow-hidden border border-border/50 cursor-pointer bg-white transition-all hover:border-primary/40 hover:shadow-md",
+                                            uploadStatuses[img._id || img.id || img.image_url] === 'uploading' &&
+                                            "opacity-70 pointer-events-none ring-2 ring-primary",
                                         )}
-                                        
-                                        {uploadStatuses[img._id || img.id || img.image_url] === "approved" && (
-                                            <div className="absolute top-2 right-2 z-20 bg-green-500/95 text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-sm animate-in zoom-in duration-300">
-                                                <CheckCircle2 size={12} /> Approved
-                                            </div>
-                                        )}
-                                        
-                                        {uploadStatuses[img._id || img.id || img.image_url] === "rejected" && (
-                                            <div className="absolute top-2 right-2 z-20 bg-red-500/95 text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-sm animate-in zoom-in duration-300">
-                                                <XCircle size={12} /> Rejected
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="p-2">
-                                        <p className="text-xs font-semibold truncate text-foreground">
-                                            {img.title}
-                                        </p>
-                                        {img.category && (
-                                            <p className="text-[10px] text-muted-foreground truncate">
-                                                {img.category}
+                                    >
+                                        <div className="aspect-square w-full bg-slate-100 relative">
+                                            <img
+                                                src={img.image_url}
+                                                alt={img.title}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                loading="lazy"
+                                            />
+                                            {/* State Overlays */}
+                                            {uploadStatuses[img._id || img.id || img.image_url] === 'uploading' && (
+                                                <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center animate-in fade-in duration-200">
+                                                    <Loader2 className="animate-spin text-primary mb-2" size={24} />
+                                                    <span className="text-[10px] font-semibold text-neutral-700 tracking-wide uppercase">Validating...</span>
+                                                </div>
+                                            )}
+
+                                            {uploadStatuses[img._id || img.id || img.image_url] === "approved" && (
+                                                <div className="absolute top-2 right-2 z-20 bg-green-500/95 text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-sm animate-in zoom-in duration-300">
+                                                    <CheckCircle2 size={12} /> Approved
+                                                </div>
+                                            )}
+
+                                            {uploadStatuses[img._id || img.id || img.image_url] === "rejected" && (
+                                                <div className="absolute top-2 right-2 z-20 bg-red-500/95 text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-sm animate-in zoom-in duration-300">
+                                                    <XCircle size={12} /> Rejected
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="p-2">
+                                            <p className="text-xs font-semibold truncate text-foreground">
+                                                {img.title}
                                             </p>
-                                        )}
+                                            {img.category && (
+                                                <p className="text-[10px] text-muted-foreground truncate">
+                                                    {img.category}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                        {isLoadingMore && (
-                            <div className="flex justify-center py-6">
-                                <Loader2 className="h-5 w-5 animate-spin text-primary/50" />
+                                ))}
                             </div>
-                        )}
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center h-40 text-center px-4">
-                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                            <Search className="h-5 w-5 text-muted-foreground/50" />
+                            {isLoadingMore && (
+                                <div className="flex justify-center py-6">
+                                    <Loader2 className="h-5 w-5 animate-spin text-primary/50" />
+                                </div>
+                            )}
                         </div>
-                        <p className="text-sm font-medium text-foreground">
-                            No matches found
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Try modifying your search query above.
-                        </p>
-                    </div>
-                )}
+                    ) : (
+                        <div className="flex flex-col items-center justify-center h-40 text-center px-4">
+                            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                                <Search className="h-5 w-5 text-muted-foreground/50" />
+                            </div>
+                            <p className="text-sm font-medium text-foreground">
+                                No matches found
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Try modifying your search query above.
+                            </p>
+                        </div>
+                    ))}
             </div>
         </aside>
     );

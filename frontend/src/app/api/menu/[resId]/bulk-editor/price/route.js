@@ -9,12 +9,21 @@ function roundToNearest9(price) {
     return Math.max(9, result);
 }
 
+function roundToNext9(price) {
+    return Math.max(9, Math.ceil((price - 9) / 10) * 10 + 9);
+}
+
 export async function POST(req, { params }) {
     try {
         await dbConnect();
 
         const { resId } = await params;
-        const { value, roundTo9 = true } = await req.json();
+        const { value, roundTo9 = false, roundMode = "none", targetSelection = "all", selectedItems = [], preview = false } = await req.json();
+        
+        let actualRoundMode = roundMode;
+        if (roundMode === "none" && roundTo9) {
+            actualRoundMode = "nearest9"; // backward compatibility
+        }
 
         if (!resId) {
             return NextResponse.json(
@@ -73,12 +82,18 @@ export async function POST(req, { params }) {
         }
 
         let updatedCount = 0;
+        const previewItems = [];
         const categories = Array.isArray(menu?.menu) ? menu.menu : menu?.menu?.categories || [];
         categories.forEach((category) => {
+
             category.sub_category?.forEach(
                 (subCategory) => {
                     subCategory.items?.forEach(
                         (item) => {
+                            if (targetSelection === "items" && !selectedItems.includes(item.id)) {
+                                return;
+                            }
+
                             let isUpdated = false;
                             const rawPrice = item?.base_price ?? item?.price;
                             const currentPrice = Number(rawPrice);
@@ -94,7 +109,23 @@ export async function POST(req, { params }) {
                                     newPrice = currentPrice + numericValue;
                                 }
 
-                                const finalPrice = roundTo9 ? roundToNearest9(Math.max(0, newPrice)) : Math.round(Math.max(0, newPrice));
+                                let finalPrice = Math.round(Math.max(0, newPrice));
+                                if (actualRoundMode === "nearest9") {
+                                    finalPrice = roundToNearest9(Math.max(0, newPrice));
+                                } else if (actualRoundMode === "next9") {
+                                    finalPrice = roundToNext9(Math.max(0, newPrice));
+                                }
+
+                                if (preview) {
+                                    previewItems.push({
+                                        id: item.id,
+                                        name: item.name,
+                                        oldPrice: currentPrice,
+                                        newPrice: finalPrice,
+                                        categoryName: category.name
+                                    });
+                                }
+
                                 item.base_price = finalPrice;
                                 if (item.price !== undefined) delete item.price; // Clean up old price if any
 
@@ -113,7 +144,13 @@ export async function POST(req, { params }) {
                                                 } else {
                                                     newOptPrice = currentOptPrice + numericValue;
                                                 }
-                                                opt.price = roundTo9 ? roundToNearest9(Math.max(0, newOptPrice)) : Math.round(Math.max(0, newOptPrice));
+                                                let finalOptPrice = Math.round(Math.max(0, newOptPrice));
+                                                if (actualRoundMode === "nearest9") {
+                                                    finalOptPrice = roundToNearest9(Math.max(0, newOptPrice));
+                                                } else if (actualRoundMode === "next9") {
+                                                    finalOptPrice = roundToNext9(Math.max(0, newOptPrice));
+                                                }
+                                                opt.price = finalOptPrice;
                                                 isUpdated = true;
                                             }
                                         });
@@ -130,8 +167,10 @@ export async function POST(req, { params }) {
             );
         });
 
-        menu.markModified("menu");
-        await menu.save();
+        if (!preview) {
+            menu.markModified("menu");
+            await menu.save();
+        }
 
         return NextResponse.json({
             success: true,
@@ -139,6 +178,8 @@ export async function POST(req, { params }) {
             value: adjustment,
             rounding: "nearest_9",
             updated_items: updatedCount,
+            previewItems: preview ? previewItems : undefined,
+            previewMenu: preview ? menu.menu : undefined
         });
     } catch (error) {
         console.error(

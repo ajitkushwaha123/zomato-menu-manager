@@ -210,7 +210,7 @@ export default function UploadMenuEditor() {
                             <h3 className="text-lg font-bold text-gray-800">Extraction Complete!</h3>
                             <p className="text-sm text-gray-500 mt-1">
                                 The items have been successfully extracted and merged into your active menu. 
-                                Switch back to the Full Menu Editor to review them.
+                                Switch back to the Price Editor to review them.
                             </p>
                             <button 
                                 onClick={() => setUploadStatus(null)} 

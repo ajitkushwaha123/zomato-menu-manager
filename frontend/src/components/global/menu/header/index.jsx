@@ -182,6 +182,7 @@ export function MenuEditorHeader({
                         </Button>
 
                         <Button
+                            id="global-save-btn"
                             onClick={onSave}
                             disabled={isSaving || isLoading}
                             className="h-10 rounded-lg px-6 shadow-md"

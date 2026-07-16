@@ -180,15 +180,6 @@ export function AppSidebar({ ...props }) {
             <div className="text-[10px] font-black text-muted-foreground/70 uppercase tracking-widest px-3 mb-3 group-data-[collapsible=icon]:hidden">Edit Modes</div>
             
             <button
-                onClick={() => setActiveBulkMode("FULL")}
-                title="Full Menu Editor"
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 ${activeBulkMode === "FULL" ? "bg-primary/10 text-primary font-bold shadow-sm ring-1 ring-primary/20 scale-[1.01]" : "text-muted-foreground hover:bg-slate-100 hover:text-foreground hover:scale-[1.01]"
-                    }`}
-            >
-                <Layers className={`w-4 h-4 shrink-0 transition-transform ${activeBulkMode === "FULL" ? "scale-110" : ""}`} /> 
-                <span className="group-data-[collapsible=icon]:hidden">Full Menu Editor</span>
-            </button>
-            <button
                 onClick={() => setActiveBulkMode("PRICE")}
                 title="Price Editor"
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 ${activeBulkMode === "PRICE" ? "bg-primary/10 text-primary font-bold shadow-sm ring-1 ring-primary/20 scale-[1.01]" : "text-muted-foreground hover:bg-slate-100 hover:text-foreground hover:scale-[1.01]"

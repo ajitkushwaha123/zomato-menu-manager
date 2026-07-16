@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import AllItemsList from "../item-view/all-items-list";
 import PriceEditor from "./views/PriceEditor";
 import DescriptionEditor from "./views/DescriptionEditor";
 import ImageEditor from "./views/ImageEditor";
@@ -52,7 +51,7 @@ export default function BulkEditorRouter({
 
     switch (activeBulkMode) {
         case "PRICE":
-            return <PriceEditor allItems={allItems} updateItem={updateItem} />;
+            return <PriceEditor allItems={allItems} updateItem={updateItem} menuData={filteredMenuData} />;
         case "DESCRIPTION":
             return <DescriptionEditor allItems={allItems} updateItem={updateItem} />;
         case "IMAGE":
@@ -69,15 +68,7 @@ export default function BulkEditorRouter({
             return <HoldItemsEditor allItems={allItems} updateItem={updateItem} deleteItem={deleteItem} categories={filteredMenuData} />;
         case "EXPORT_IMAGES":
             return <ExportImagesEditor allItems={allItems} />;
-        case "FULL":
         default:
-            return (
-                <AllItemsList 
-                    menuData={filteredMenuData}
-                    updateItem={updateItem}
-                    deleteItem={deleteItem}
-                    moveItem={moveItem}
-                />
-            );
+            return null;
     }
 }

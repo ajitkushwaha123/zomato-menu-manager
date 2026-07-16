@@ -336,6 +336,12 @@ Regular / Large / Jumbo
 
 → Volume
 
+CRITICAL RESTRICTION ON VARIANTS:
+The ONLY permitted property_names for variants are: Portion, Size, Volume, Pieces.
+NEVER create a variant property named "Type", "Meat", "Protein", "Choice", "Veg/Non-Veg", or anything similar. 
+If an item has Veg/Chicken/Mutton options (e.g. Hakka Noodles - Veg 150, Chicken 180), DO NOT make them variants! You MUST extract them as TWO SEPARATE items: "Veg Hakka Noodles" and "Chicken Hakka Noodles".
+If you create a variant for Veg/Chicken, the extraction is considered a FAILURE.
+
 ====================================================
 VARIANT CREATION
 ====================================================
@@ -367,6 +373,14 @@ Mango Mojito 49
 
 These are TWO SEPARATE ITEMS (Strawberry Mojito and Mango Mojito) under the category "Mojito". 
 They are NOT variants of a single "Mojito" item! Variants ONLY exist for sizes/portions (Half/Full/Small/Large).
+
+CRITICAL RULE FOR VEG/NON-VEG:
+NEVER club Veg and Non-Veg items together as variants of a single item!
+For example, if the text has a category or item like "Fried Rice" with columns for "(Veg, Chicken)" and prices "150 200".
+You MUST create TWO SEPARATE items:
+1. "Veg Fried Rice" with base_price 150
+2. "Chicken Fried Rice" with base_price 200
+DO NOT create a single "Fried Rice" item with variants "Veg" and "Chicken". Veg and Non-Veg versions of a dish are ALWAYS separate items.
 
 Never create variants with only one option.
 

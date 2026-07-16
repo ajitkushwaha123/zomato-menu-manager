@@ -93,12 +93,34 @@ const parseItemVariants = (catalogueWrapper) => {
 const buildItem = (catalogueWrapper, onHoldItems = {}) => {
     const catalogue = catalogueWrapper?.catalogue || {};
     const tags = catalogueWrapper?.catalogueTags || [];
-    const base_price = getBasePrice(
-        catalogueWrapper?.variantWrappers
-    );
+    let base_price = getBasePrice(catalogueWrapper?.variantWrappers);
 
     const catalogueId = catalogue?.catalogueId || "";
     const holdData = onHoldItems?.catalogues?.[catalogueId];
+
+    const parsedVariants = parseItemVariants(catalogueWrapper);
+
+    // If item has variants, ensure base_price equals the lowest variant option price
+    if (parsedVariants && parsedVariants.length > 0) {
+        let lowestPrice = Infinity;
+        parsedVariants.forEach(v => {
+            v.options?.forEach(opt => {
+                if (opt.price > 0 && opt.price < lowestPrice) {
+                    lowestPrice = opt.price;
+                }
+            });
+        });
+        if (lowestPrice !== Infinity) {
+            base_price = lowestPrice;
+        }
+
+        // Sort variant groups themselves by their lowest option price
+        parsedVariants.sort((a, b) => {
+            const minA = a.options?.[0]?.price || 0;
+            const minB = b.options?.[0]?.price || 0;
+            return minA - minB;
+        });
+    }
 
     return {
         id: catalogueId,
@@ -109,7 +131,7 @@ const buildItem = (catalogueWrapper, onHoldItems = {}) => {
         is_veg: tags.includes("egg") ? "EGG" : tags.includes("non-veg") ? "NON_VEG" : "VEG",
         packing_charges: 0,
         media: catalogue?.media || [],
-        variants: parseItemVariants(catalogueWrapper),
+        variants: parsedVariants,
         meatTypes: catalogue?.meatTypes,
         onHold: !!holdData,
         holdComments: holdData?.comments || [],
@@ -122,7 +144,6 @@ export const parseZomatoCatalogueMenu = (data, onHoldItems = {}) => {
     const catalogueWrappers = data?.catalogueWrappers || [];
     const catalogueLookup = buildCatalogueLookup(catalogueWrappers);
 
-    // Parse categories and items
     const parsedMenu = categoryWrappers.map((categoryWrapper) => {
         const category = categoryWrapper?.category || {};
         const subCategoryWrappers = categoryWrapper?.subCategoryWrappers || [];
@@ -152,7 +173,6 @@ export const parseZomatoCatalogueMenu = (data, onHoldItems = {}) => {
         };
     });
 
-    // Parse Addons (Modifiers)
     const modifierGroupWrappers = data?.modifierGroupWrappers || [];
     const variantLookup = new Map();
 
@@ -172,7 +192,6 @@ export const parseZomatoCatalogueMenu = (data, onHoldItems = {}) => {
         .map(groupWrapper => {
             const mg = groupWrapper?.modifierGroup || {};
 
-            // Find options mapped to this group
             const options = (groupWrapper?.variantModifierGroupMaps || []).map(map => {
                 const vInfo = variantLookup.get(map.variantId);
                 if (!vInfo) return null;
@@ -210,7 +229,6 @@ export const parseZomatoCatalogueMenu = (data, onHoldItems = {}) => {
 
     const validAddonIds = new Set(parsedAddons.map(a => a.id));
 
-    // Link addons to base items
     catalogueWrappers.forEach(wrapper => {
         const itemAddonIds = new Set();
 
