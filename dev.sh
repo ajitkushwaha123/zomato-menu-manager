@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # ──────────────────────────────────────────────────────────────
-# dev.sh — starts all services for zomato-menu-manager
+# dev.sh — starts all services for zomato-menu-manager (Mac/Linux)
 # Usage: ./dev.sh  OR  npm run dev:all
+# Windows users: run  npm run dev  instead (uses concurrently)
 # ──────────────────────────────────────────────────────────────
 set -e
 
@@ -49,12 +50,12 @@ PIDS+=($!)
 
 # 2. FastAPI backend (uvicorn)
 log "$GREEN" "API" "Starting FastAPI backend on port 1001..."
-(cd "$BACKEND" && /opt/homebrew/bin/uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 1001) &
+(cd "$BACKEND" && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 1001) &
 PIDS+=($!)
 
-# 4. Python background worker (SQS poller)
+# 3. Python background worker (SQS poller)
 log "$MAGENTA" "BG-WORKER" "Starting Python background worker..."
-(cd "$BACKEND" && /opt/homebrew/bin/uv run python -m app.workers.menu_worker) &
+(cd "$BACKEND" && uv run python -m app.workers.menu_worker) &
 PIDS+=($!)
 
 echo ""
