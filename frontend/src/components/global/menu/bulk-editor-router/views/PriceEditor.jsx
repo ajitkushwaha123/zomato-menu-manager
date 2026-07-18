@@ -11,13 +11,6 @@ export default function PriceEditor({ allItems, updateItem, menuData }) {
     const [referenceFileType, setReferenceFileType] = useState(null);
     const fileInputRef = useRef(null);
 
-    if (!allItems || allItems.length === 0) {
-        return (
-            <div className="flex-1 flex items-center justify-center text-gray-400">
-                No items available.
-            </div>
-        );
-    }
 
     const { activeResId, getMenuByResId } = useMenu();
     const notification = useNotification();
@@ -261,6 +254,14 @@ export default function PriceEditor({ allItems, updateItem, menuData }) {
         newVariants[gIdx] = { ...newVariants[gIdx], options: newOptions };
         updateItem({ itemId, updates: { variants: newVariants } });
     };
+
+    if (!allItems || allItems.length === 0) {
+        return (
+            <div className="flex-1 flex items-center justify-center text-gray-400">
+                No items available.
+            </div>
+        );
+    }
 
     return (
         <div className="flex h-full bg-gray-50/30 w-full overflow-hidden">

@@ -7,7 +7,7 @@
     "dev:all":       "bash dev.sh",
     "dev:frontend":  "cd frontend && npm run dev",
     "dev:worker":    "cd frontend && node src/lib/bullmq/worker/menu-parser.js",
-    "dev:backend":   "cd backend && /opt/homebrew/bin/uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:backend":   "cd backend && /opt/homebrew/bin/uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 1001",
     "dev:bg-worker": "cd backend && /opt/homebrew/bin/uv run python -m app.workers.menu_worker"
   },
   "devDependencies": {

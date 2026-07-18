@@ -36,7 +36,13 @@ Rules
 
 9. Preserve prices exactly.
 
-10. Preserve names exactly.
+10. NAME FORMATTING — CRITICAL:
+    Item names MUST follow natural ingredient-first order. The primary ingredient or protein comes FIRST.
+    - If the menu shows "Lemongrass Special Salad (Paneer)", name it "Paneer Lemongrass Special Salad"
+    - If the menu shows "Butter Masala (Chicken)", name it "Chicken Butter Masala"
+    - If the menu shows "Fried Rice (Egg)", name it "Egg Fried Rice"
+    - If the menu shows "Hakka Noodles (Veg)", name it "Veg Hakka Noodles"
+    RULE: Remove parentheses entirely. Move parenthetical protein/ingredient to the FRONT.
 
 11. Never invent information.
 

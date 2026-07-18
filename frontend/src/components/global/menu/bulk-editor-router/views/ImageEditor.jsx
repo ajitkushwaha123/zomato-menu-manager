@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { ImageIcon, Loader2, CheckCircle2, XCircle, Sparkles } from "lucide-react";
+import { ImageIcon, Loader2, CheckCircle2, XCircle, Sparkles, Trash2 } from "lucide-react";
 import { openImageSidebar } from "@/store/slice/menuSlice";
 import ZomatoImageDropzone from "../../shared/ZomatoImageDropzone";
 import useNotification from "@/store/hooks/useNotification";
@@ -108,6 +108,22 @@ export default function ImageEditor({ allItems, updateItem }) {
 
     const [isAutoApplying, setIsAutoApplying] = useState(false);
     const [autoApplyProgress, setAutoApplyProgress] = useState({ total: 0, completed: 0 });
+    const [removeConfirm, setRemoveConfirm] = useState(false);
+    const removeConfirmTimer = useRef(null);
+
+    const handleRemoveAllImages = () => {
+        if (!removeConfirm) {
+            setRemoveConfirm(true);
+            removeConfirmTimer.current = setTimeout(() => setRemoveConfirm(false), 3000);
+            return;
+        }
+        clearTimeout(removeConfirmTimer.current);
+        setRemoveConfirm(false);
+        allItems.forEach(item => {
+            updateItem({ itemId: item.id, updates: { media: [] } });
+        });
+        notify.success("All images removed.");
+    };
 
     const handleAutoApplyImages = async () => {
         const itemsWithoutMedia = allItems.filter(item => {
@@ -159,24 +175,36 @@ export default function ImageEditor({ allItems, updateItem }) {
                 
                 const fetchPromises = chunk.map(async (item) => {
                     try {
-                        const cleanName = item.name.split("[")[0].split("(")[0].trim();
-                        // Increase limit to 6 to give more fallback options if top results are already used
-                        const res = await api.get(`/api/image/search?q=${encodeURIComponent(cleanName)}&page=1&limit=6&latest=true`);
+                        // Map is_veg to food_type expected by the match API
+                        const foodTypeMap = {
+                            VEG: "veg",
+                            NON_VEG: "non_veg",
+                            EGG: "egg",
+                        };
+                        const food_type = foodTypeMap[item.is_veg] || "veg";
+
+                        // Use structured POST /api/image/match for richer semantic matching
+                        const res = await api.post(`/api/image/match`, {
+                            title: item.name,
+                            category: item._parentCategoryName || null,
+                            sub_category: item._parentSubCategoryName || null,
+                            food_type,
+                        });
                         const photos = res.data?.data || [];
-                        
+
                         let finalMedia = [];
-                        
+
                         for (let j = 0; j < Math.min(6, photos.length); j++) {
                             const photo = photos[j];
                             const imageUrl = photo.image_url || photo.image || photo.url;
                             if (!imageUrl) continue;
-                            
+
                             // Prevent duplicate images
                             if (usedImages.has(imageUrl)) continue;
-                            
+
                             // Optimistically mark as used
                             usedImages.add(imageUrl);
-                            
+
                             updateItem({
                                 itemId: item.id,
                                 updates: {
@@ -188,16 +216,28 @@ export default function ImageEditor({ allItems, updateItem }) {
                                     }]
                                 }
                             });
-                            
+
                             const uploadRes = await uploadZomatoImage(activeResId, imageUrl);
-                            
+
                             if (uploadRes.success && uploadRes.mediaArray) {
                                 finalMedia = uploadRes.mediaArray;
                                 break;
                             }
+
+                            // Upload failed — use source URL directly as fallback
+                            finalMedia = [{
+                                tempReferenceId: `temp-auto-${crypto.randomUUID()}`,
+                                url: imageUrl,
+                                thumbUrl: photo.thumb_url || photo.thumbUrl || imageUrl,
+                                isNewlyUploaded: true,
+                                isUploading: false,
+                            }];
+                            break;
+
                         }
-                        
+
                         return { itemId: item.id, media: finalMedia };
+
                     } catch (e) {
                         console.error(`Failed to fetch/upload image for ${item.name}`, e);
                         return { itemId: item.id, media: [] };
@@ -211,17 +251,8 @@ export default function ImageEditor({ allItems, updateItem }) {
                     if (media && media.length > 0) {
                         updateItem({ itemId, updates: { media } });
                     } else {
-                        updateItem({
-                            itemId,
-                            updates: {
-                                media: [{
-                                    tempReferenceId: `temp-auto-fail-${crypto.randomUUID()}`,
-                                    url: "https://placehold.co/200x200?text=Rejected",
-                                    isUploading: false,
-                                    mediaTags: [{ tagSlug: "rejected" }]
-                                }]
-                            }
-                        });
+                        // No image found — reset to empty so card shows "No Image" cleanly
+                        updateItem({ itemId, updates: { media: [] } });
                     }
                 });
                 
@@ -267,6 +298,19 @@ export default function ImageEditor({ allItems, updateItem }) {
                         </div>
                         
                         <div className="flex items-center gap-3 shrink-0">
+                            <Button
+                                variant="secondary"
+                                onClick={handleRemoveAllImages}
+                                disabled={isAutoApplying}
+                                className={`h-9 rounded-lg px-4 border transition-colors ${
+                                    removeConfirm
+                                        ? 'bg-red-500 hover:bg-red-600 text-white border-red-500'
+                                        : 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200'
+                                }`}
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>{removeConfirm ? 'Confirm Remove?' : 'Remove All'}</span>
+                            </Button>
                             <Button
                                 variant="secondary"
                                 onClick={handleAutoApplyImages}

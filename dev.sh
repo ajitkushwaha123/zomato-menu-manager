@@ -18,8 +18,8 @@ RESET='\033[0m'
 
 log() { echo -e "${1}[${2}]${RESET} ${3}"; }
 
-echo "🧹 Cleaning up any lingering processes on ports 3000, 8000..."
-lsof -ti:3000,8000 | xargs kill -9 2>/dev/null || true
+echo "🧹 Cleaning up any lingering processes on ports 1000, 1001..."
+lsof -ti:1000,1001 | xargs kill -9 2>/dev/null || true
 pkill -f "next-server" 2>/dev/null || true
 pkill -f "uvicorn" 2>/dev/null || true
 rm -rf "$FRONTEND/.next/dev/lock" 2>/dev/null || true
@@ -48,8 +48,8 @@ log "$CYAN" "NEXT" "Starting Next.js..."
 PIDS+=($!)
 
 # 2. FastAPI backend (uvicorn)
-log "$GREEN" "API" "Starting FastAPI backend on port 8000..."
-(cd "$BACKEND" && /opt/homebrew/bin/uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000) &
+log "$GREEN" "API" "Starting FastAPI backend on port 1001..."
+(cd "$BACKEND" && /opt/homebrew/bin/uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 1001) &
 PIDS+=($!)
 
 # 4. Python background worker (SQS poller)
@@ -59,8 +59,8 @@ PIDS+=($!)
 
 echo ""
 echo "✅  All services started:"
-echo "   🌐  Next.js      → http://localhost:3000"
-echo "   🐍  FastAPI      → http://localhost:8000"
+echo "   🌐  Next.js      → http://localhost:1000"
+echo "   🐍  FastAPI      → http://localhost:1001"
 echo "   ⚙️   Python Worker running"
 echo ""
 echo "   Press Ctrl+C to stop everything."

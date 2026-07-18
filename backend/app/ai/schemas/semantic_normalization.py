@@ -10,6 +10,8 @@ class NormalizationItem(BaseModel):
 class NormalizedItem(BaseModel):
     id: str
     name: str
+    category: str
+    sub_category: str
     is_veg: str
     meat_types: Optional[List[str]] = []
 
