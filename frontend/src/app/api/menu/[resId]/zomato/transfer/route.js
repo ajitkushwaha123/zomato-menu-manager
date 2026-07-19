@@ -61,8 +61,49 @@ export const POST = async (req, { params }) => {
                 menu: newMenu
             });
         } else {
-            menuToUpdate.menu = newMenu;
+            const existingMenu = menuToUpdate.menu || [];
+
+            // Merge: for each incoming category, either append or merge into matching existing category
+            for (const incomingCat of newMenu) {
+                const matchingCat = existingMenu.find(
+                    (c) => c.name?.toLowerCase().trim() === incomingCat.name?.toLowerCase().trim()
+                );
+
+                if (!matchingCat) {
+                    // Brand-new category — append it wholesale
+                    existingMenu.push(incomingCat);
+                } else {
+                    // Category already exists — merge sub-categories
+                    for (const incomingSub of incomingCat.sub_categories || []) {
+                        const matchingSub = (matchingCat.sub_categories || []).find(
+                            (s) => s.name?.toLowerCase().trim() === incomingSub.name?.toLowerCase().trim()
+                        );
+
+                        if (!matchingSub) {
+                            // New sub-category — append it
+                            matchingCat.sub_categories = matchingCat.sub_categories || [];
+                            matchingCat.sub_categories.push(incomingSub);
+                        } else {
+                            // Sub-category exists — append items that don't already exist (by name)
+                            const existingItemNames = new Set(
+                                (matchingSub.items || []).map((i) => i.name?.toLowerCase().trim())
+                            );
+                            for (const item of incomingSub.items || []) {
+                                if (!existingItemNames.has(item.name?.toLowerCase().trim())) {
+                                    matchingSub.items = matchingSub.items || [];
+                                    matchingSub.items.push(item);
+                                    existingItemNames.add(item.name?.toLowerCase().trim());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            menuToUpdate.menu = existingMenu;
+            menuToUpdate.markModified("menu");
             await menuToUpdate.save();
+
         }
 
         return NextResponse.json(

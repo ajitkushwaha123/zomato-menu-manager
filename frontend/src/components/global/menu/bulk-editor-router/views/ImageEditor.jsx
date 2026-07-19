@@ -183,12 +183,12 @@ export default function ImageEditor({ allItems, updateItem }) {
                         };
                         const food_type = foodTypeMap[item.is_veg] || "veg";
 
-                        // Use structured POST /api/image/match for richer semantic matching
-                        const res = await api.post(`/api/image/match`, {
-                            title: item.name,
-                            category: item._parentCategoryName || null,
-                            sub_category: item._parentSubCategoryName || null,
-                            food_type,
+                        // Hit local search proxy to avoid CORS, passing param premium = true
+                        const res = await api.get(`/api/image/search`, {
+                            params: {
+                                q: item.name,
+                                premium: true
+                            }
                         });
                         const photos = res.data?.data || [];
 

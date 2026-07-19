@@ -66,6 +66,12 @@ export async function GET(req) {
             url.searchParams.set("approved", "true");
         }
 
+        // Forward premium parameter if provided
+        const premium = searchParams.get("premium");
+        if (premium === "true") {
+            url.searchParams.set("premium", "true");
+        }
+
         const response = await fetch(url.toString(), {
             signal: controller.signal,
             cache: "no-store",
