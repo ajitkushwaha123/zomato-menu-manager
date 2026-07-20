@@ -41,19 +41,42 @@ export default function DescriptionEditor({ allItems, updateItem }) {
         }
     };
 
+    const clearAllDescriptions = () => {
+        if (!window.confirm("Are you sure you want to clear all descriptions? This action cannot be undone.")) return;
+        
+        let count = 0;
+        allItems.forEach(item => {
+            if (item.description) {
+                updateItem({ itemId: item.id, updates: { description: "" } });
+                count++;
+            }
+        });
+        
+        notification.success(`Cleared ${count} description${count !== 1 ? 's' : ''}.`, { duration: 3000 });
+    };
+
     return (
         <div className="flex-1 overflow-y-auto p-4 bg-gray-50/30">
             <div className="mx-auto space-y-4">
                 <div className="flex justify-between items-end border-b pb-2">
                     <h2 className="text-lg font-bold text-gray-800">Description Editor</h2>
-                    <button
-                        onClick={generateDescriptions}
-                        disabled={isGenerating}
-                        className="flex items-center gap-2 text-sm bg-purple-100 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-lg hover:bg-purple-200 font-semibold shadow-sm transition-colors disabled:opacity-50"
-                    >
-                        {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                        {isGenerating ? "Generating..." : "Generate descriptions (AI)"}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={clearAllDescriptions}
+                            disabled={isGenerating}
+                            className="flex items-center gap-2 text-sm bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-100 font-semibold shadow-sm transition-colors disabled:opacity-50"
+                        >
+                            Clear all
+                        </button>
+                        <button
+                            onClick={generateDescriptions}
+                            disabled={isGenerating}
+                            className="flex items-center gap-2 text-sm bg-purple-100 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-lg hover:bg-purple-200 font-semibold shadow-sm transition-colors disabled:opacity-50"
+                        >
+                            {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                            {isGenerating ? "Generating..." : "Generate descriptions (AI)"}
+                        </button>
+                    </div>
                 </div>
 
                 <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
