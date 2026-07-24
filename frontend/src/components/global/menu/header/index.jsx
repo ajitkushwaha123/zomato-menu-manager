@@ -7,6 +7,8 @@ import {
     History,
     Sparkles,
     Image as ImageIcon,
+    Search,
+    ChevronRight
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -29,7 +31,7 @@ export function MenuEditorHeader({
     onSave,
     isSaving,
 }) {
-    const { menuData, isLoading, error, syncZomatoMenu, isSyncing, activeResId: resId, updateItem } = useMenu();
+    const { menuData, isLoading, error, syncZomatoMenu, isSyncing, activeResId: resId, updateItem, setActiveCategory, setActiveSubCategory, setActiveView, globalSearchQuery, setGlobalSearchQuery } = useMenu();
     const notification = useNotification();
 
     const menuArray = Array.isArray(menuData) ? menuData : [];
@@ -110,6 +112,26 @@ export function MenuEditorHeader({
             notify.error("Restaurant ID is missing");
             return;
         }
+        
+        let hasZeroPrice = false;
+        menuArray.forEach(cat => {
+            if (cat.status === 'delete' || cat.status === 'deleted') return;
+            (cat.sub_category || []).forEach(sub => {
+                if (sub.status === 'delete' || sub.status === 'deleted') return;
+                (sub.items || []).forEach(item => {
+                    if (item.status === 'delete' || item.status === 'deleted') return;
+                    if (item.base_price === 0 || item.price === 0) {
+                        hasZeroPrice = true;
+                    }
+                });
+            });
+        });
+
+        if (hasZeroPrice) {
+            notify.error("Cannot trigger menu: Some items have a price of ₹0. Please update them before triggering.");
+            return;
+        }
+
         try {
             setIsTriggering(true);
             const res = await api.post(`/api/menu/${resId}/zomato/update-menu`, {});
@@ -121,8 +143,6 @@ export function MenuEditorHeader({
             setIsTriggering(false);
         }
     };
-
-
 
     return (
         <>
@@ -156,6 +176,25 @@ export function MenuEditorHeader({
                                 <span className="text-purple-700/70">Hold+Media:</span>
                                 <span className="text-purple-950 font-bold">{stats.onHoldWithMedia}</span>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Center: Search Bar */}
+                    <div className="flex-1 max-w-sm mx-4 relative hidden md:block" style={{ zIndex: 100 }}>
+                        <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                            <input 
+                                type="text"
+                                placeholder="Search all items..."
+                                value={globalSearchQuery}
+                                onChange={(e) => {
+                                    setGlobalSearchQuery(e.target.value);
+                                    if (e.target.value.trim() !== "") {
+                                        setActiveView("MENU");
+                                    }
+                                }}
+                                className="w-full pl-9 pr-4 py-1.5 bg-gray-100 border-none rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                            />
                         </div>
                     </div>
 

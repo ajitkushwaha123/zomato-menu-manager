@@ -33,7 +33,8 @@ export default function MenuItemRow({
     onChange,
     onDelete,
     categories,
-    isAllItemsView
+    isAllItemsView,
+    isDuplicate
 }) {
     const { activeResId } = useSelector((state) => state.menu);
     const dispatch = useDispatch();
@@ -136,6 +137,8 @@ export default function MenuItemRow({
             className={`group border rounded-xl p-3 transition-all mb-3 relative ${
                 item?.id?.toString().startsWith("temp-") 
                     ? "bg-green-50/50 border-green-300 hover:border-green-500"
+                    : isDuplicate
+                    ? "bg-red-50/30 border-red-300 hover:border-red-400"
                     : "bg-white hover:border-orange-300"
             }`}
             onMouseEnter={() => setIsHovered(true)}
@@ -267,6 +270,16 @@ export default function MenuItemRow({
                                     className={`flex-1 font-semibold placeholder:text-gray-400 outline-none bg-transparent ${!item?.name?.trim() ? "border-b border-red-500 text-red-500" : "text-gray-800"
                                         }`}
                                 />
+                                {isDuplicate && (
+                                    <span className="text-[10px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap">
+                                        Duplicate
+                                    </span>
+                                )}
+                                {(item?.base_price === 0 || item?.price === 0) && (
+                                    <span className="text-[10px] font-bold text-white bg-red-500 px-2 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap shadow-sm" title="Price cannot be 0">
+                                        Price Missing
+                                    </span>
+                                )}
                             </div>
                             <div className="flex items-center gap-1 font-semibold">
                                 <span className="text-gray-500">₹</span>

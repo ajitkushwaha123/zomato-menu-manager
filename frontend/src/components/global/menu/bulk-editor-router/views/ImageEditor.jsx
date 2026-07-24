@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { ImageIcon, Loader2, CheckCircle2, XCircle, Sparkles, Trash2 } from "lucide-react";
+import { ImageIcon, Loader2, CheckCircle2, XCircle, Sparkles, Trash2, Play, Database, Search, AlertCircle } from "lucide-react";
 import { openImageSidebar } from "@/store/slice/menuSlice";
 import ZomatoImageDropzone from "../../shared/ZomatoImageDropzone";
 import useNotification from "@/store/hooks/useNotification";
@@ -78,9 +78,16 @@ const ImageCard = ({ item, onClick, onDrop, isActive }) => {
 
             {/* Content Details */}
             <div className="p-2.5 space-y-1 bg-white">
-                <p className="text-xs font-semibold truncate text-neutral-800 leading-tight" title={item.name}>
-                    {item.name || "Unnamed Item"}
-                </p>
+                <div className="flex justify-between items-start gap-1">
+                    <p className="text-xs font-semibold truncate text-neutral-800 leading-tight" title={item.name}>
+                        {item.name || "Unnamed Item"}
+                    </p>
+                    {(item.base_price === 0 || item.price === 0) && (
+                        <div className="shrink-0 flex items-center justify-center" title="Price is 0">
+                            <AlertCircle size={12} className="text-red-500" />
+                        </div>
+                    )}
+                </div>
 
                 {item._parentCategoryName && (
                     <p className="text-[10px] text-muted-foreground font-medium truncate flex items-center gap-1" title={`${item._parentCategoryName} → ${item._parentSubCategoryName}`}>
@@ -270,6 +277,140 @@ export default function ImageEditor({ allItems, updateItem }) {
         }
     };
 
+    const handleApplyFromDB = async () => {
+        const itemsWithoutMedia = allItems.filter(item => {
+            const hasMedia = item.media && item.media.length > 0;
+            return !hasMedia;
+        });
+
+        if (itemsWithoutMedia.length === 0) {
+            notify.success("All items already have images!");
+            return;
+        }
+
+        // Inject temporary placeholders
+        itemsWithoutMedia.forEach(item => {
+            updateItem({
+                itemId: item.id,
+                updates: {
+                    media: [{
+                        tempReferenceId: `temp-db-${crypto.randomUUID()}`,
+                        url: '',
+                        isUploading: true,
+                        uploadText: 'Searching DB...'
+                    }]
+                }
+            });
+        });
+
+        setIsAutoApplying(true);
+        setAutoApplyProgress({ total: itemsWithoutMedia.length, completed: 0 });
+
+        // Maintain a set of used image URLs to prevent duplicates
+        const usedImages = new Set();
+        allItems.forEach(item => {
+            if (item.media && item.media.length > 0) {
+                item.media.forEach(m => {
+                    if (m.url) usedImages.add(m.url);
+                    if (m.thumbUrl) usedImages.add(m.thumbUrl);
+                });
+            } else if (item.image_url) {
+                usedImages.add(item.image_url);
+            }
+        });
+
+        try {
+            const chunkSize = 2; // Process 2 images at a time to prevent rate limiting
+            let completedCount = 0;
+            
+            for (let i = 0; i < itemsWithoutMedia.length; i += chunkSize) {
+                const chunk = itemsWithoutMedia.slice(i, i + chunkSize);
+                
+                const fetchPromises = chunk.map(async (item) => {
+                    try {
+                        const res = await api.get(`/api/image/internal-search`, {
+                            params: {
+                                q: item.name,
+                                limit: 6
+                            }
+                        });
+                        const photos = res.data?.data || [];
+
+                        let finalMedia = [];
+
+                        for (let j = 0; j < Math.min(6, photos.length); j++) {
+                            const photo = photos[j];
+                            const imageUrl = photo.image_url || photo.image || photo.url;
+                            
+                            if (!imageUrl) continue;
+
+                            if (usedImages.has(imageUrl)) continue;
+                            usedImages.add(imageUrl);
+
+                            updateItem({
+                                itemId: item.id,
+                                updates: {
+                                    media: [{
+                                        tempReferenceId: `temp-db-${crypto.randomUUID()}`,
+                                        url: '',
+                                        isUploading: true,
+                                        uploadText: `Uploading from DB ${j+1}/${Math.min(6, photos.length)}...`
+                                    }]
+                                }
+                            });
+
+                            const uploadRes = await uploadZomatoImage(activeResId, imageUrl);
+
+                            if (uploadRes.success && uploadRes.mediaArray) {
+                                finalMedia = uploadRes.mediaArray;
+                                break;
+                            }
+
+                            // Upload failed — use source URL directly as fallback
+                            finalMedia = [{
+                                tempReferenceId: `temp-db-${crypto.randomUUID()}`,
+                                url: imageUrl,
+                                thumbUrl: photo.thumb_url || photo.thumbUrl || imageUrl,
+                                isNewlyUploaded: true,
+                                isUploading: false,
+                            }];
+                            break;
+                        }
+
+                        return { itemId: item.id, media: finalMedia };
+
+                    } catch (e) {
+                        console.error(`Failed to fetch/upload internal image for ${item.name}`, e);
+                        return { itemId: item.id, media: [] };
+                    }
+                });
+                
+                const results = await Promise.all(fetchPromises);
+                
+                results.forEach(result => {
+                    const { itemId, media } = result;
+                    if (media && media.length > 0) {
+                        updateItem({ itemId, updates: { media } });
+                    } else {
+                        updateItem({ itemId, updates: { media: [] } });
+                    }
+                });
+                
+                completedCount += chunk.length;
+                setAutoApplyProgress({ total: itemsWithoutMedia.length, completed: completedCount });
+            }
+            
+            setIsAutoApplying(false);
+            notify.success(`Successfully applied images from DB for ${itemsWithoutMedia.length} items!`);
+            
+        } catch (err) {
+            console.error(err);
+            notify.error("Failed during DB auto apply.");
+            setIsAutoApplying(false);
+        }
+    };
+
+
     if (!allItems || allItems.length === 0) {
         return (
             <div className="flex-1 flex flex-col gap-2 items-center justify-center text-muted-foreground min-h-[300px]">
@@ -328,6 +469,15 @@ export default function ImageEditor({ allItems, updateItem }) {
                                         <span>Auto Apply Images</span>
                                     </>
                                 )}
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                onClick={handleApplyFromDB}
+                                disabled={isAutoApplying}
+                                className="h-9 rounded-lg px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors relative overflow-hidden"
+                            >
+                                <Database className="mr-2 h-4 w-4 text-emerald-500" />
+                                <span>Auto-fill from DB</span>
                             </Button>
                         </div>
                         

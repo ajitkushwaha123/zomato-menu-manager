@@ -5,12 +5,13 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Edit, MoreHorizontal, Trash2 } from "lucide-react";
+import { Edit, MoreHorizontal, Trash2, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function ActionMenu({
     onRename,
     onDelete,
+    onCopy,
     destructive = true,
     triggerClassName,
 }) {
@@ -51,6 +52,16 @@ export default function ActionMenu({
                     <Edit className="mr-2 h-4 w-4" />
                     Rename
                 </DropdownMenuItem>
+                
+                {onCopy && (
+                    <DropdownMenuItem
+                        onClick={(e) => handleAction(e, onCopy)}
+                        className="cursor-pointer rounded-lg"
+                    >
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copy
+                    </DropdownMenuItem>
+                )}
 
                 <DropdownMenuItem
                     onClick={(e) => handleAction(e, onDelete)}

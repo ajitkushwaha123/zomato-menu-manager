@@ -29,27 +29,27 @@ export function LoginForm({ className, ...props }) {
     if (savedCookie) {
       router.replace("/");
     }
-    
+
     try {
       const stored = localStorage.getItem("zomato_saved_accounts");
       if (stored) {
         setSavedAccounts(JSON.parse(stored));
       }
-    } catch(e) {}
+    } catch (e) { }
   }, [router]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const value = cookie.trim();
     if (!value) return;
-    
+
     if (accountName.trim()) {
       const existing = savedAccounts.filter(a => a.name !== accountName.trim());
       const updated = [{ name: accountName.trim(), cookie: value }, ...existing];
       setSavedAccounts(updated);
       localStorage.setItem("zomato_saved_accounts", JSON.stringify(updated));
     }
-    
+
     CookieStorage.set(value);
     notify.success("Logged In Successfully ...!", { duration: 10000 });
     router.replace("/");
@@ -73,7 +73,7 @@ export function LoginForm({ className, ...props }) {
       <Card className="relative w-full overflow-hidden rounded-3xl border-white/20 bg-background/80">
         <CardContent className="space-y-8 pt-6">
           <form onSubmit={handleSubmit} className="space-y-8">
-            
+
             {savedAccounts.length > 0 && (
               <div className="space-y-3 mb-6 bg-muted/20 p-4 rounded-2xl border border-white/10">
                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
@@ -82,7 +82,7 @@ export function LoginForm({ className, ...props }) {
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {savedAccounts.map(acc => (
-                    <div 
+                    <div
                       key={acc.name}
                       onClick={() => {
                         setAccountName(acc.name);
@@ -110,9 +110,9 @@ export function LoginForm({ className, ...props }) {
             <FieldGroup>
               <Field>
                 <div className="mb-6">
-                  <Input 
-                    type="text" 
-                    placeholder="Account Name (optional)" 
+                  <Input
+                    type="text"
+                    placeholder="Account Name (optional)"
                     value={accountName}
                     onChange={(e) => setAccountName(e.target.value)}
                     className="h-12 rounded-xl bg-muted/40 font-medium px-4"

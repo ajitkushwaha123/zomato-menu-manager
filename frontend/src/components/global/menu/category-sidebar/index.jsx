@@ -1,11 +1,10 @@
 "use client";
-
+import CategoryCard from "./category-card";
 import { Button } from "@/components/ui/button";
 import { useMenu } from "@/store/hooks/useMenu";
 import { useMemo, useState, useEffect } from "react";
 import InlineInput from "@/components/ui/inline-input";
-import { Plus, Layers, Settings2, DollarSign, AlignLeft, Image as ImageIcon, ChevronLeft, ChevronRight, FileUp, Share, Cloud, PlusCircle, AlertTriangle } from "lucide-react";
-import CategoryCard from "./category-card";
+import { Plus, Layers, Settings2, DollarSign, AlignLeft, Image as ImageIcon, ChevronLeft, ChevronRight, FileUp, Share, Cloud, PlusCircle, AlertTriangle, ClipboardPaste } from "lucide-react";
 
 export default function CategorySidebar() {
     const {
@@ -24,6 +23,9 @@ export default function CategorySidebar() {
         addSubCategory,
         updateSubCategory,
         deleteSubCategory,
+        copyCategoryToClipboard,
+        pasteCategoryFromClipboard,
+        hasCopiedCategory,
     } = useMenu();
 
     const [addingCategory, setAddingCategory] = useState(false);
@@ -93,15 +95,28 @@ export default function CategorySidebar() {
                                 </button>
                             </div>
                             {!addingCategory && activeView === "MENU" && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-                                    onClick={() => setAddingCategory(true)}
-                                    title="Add Category"
-                                >
-                                    <Plus className="h-4 w-4" />
-                                </Button>
+                                <div className="flex items-center gap-1 shrink-0">
+                                    {hasCopiedCategory && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                                            onClick={pasteCategoryFromClipboard}
+                                            title="Paste Category"
+                                        >
+                                            <ClipboardPaste className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                                        onClick={() => setAddingCategory(true)}
+                                        title="Add Category"
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                    </Button>
+                                </div>
                             )}
                         </div>
                         {addingCategory && (
@@ -142,6 +157,7 @@ export default function CategorySidebar() {
                                     addSubCategory={addSubCategory}
                                     updateSubCategory={updateSubCategory}
                                     deleteSubCategory={deleteSubCategory}
+                                    copyCategoryToClipboard={copyCategoryToClipboard}
                                 />
                             ))}
                         </div>

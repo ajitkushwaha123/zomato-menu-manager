@@ -12,8 +12,8 @@ import {
   Share,
   Cloud,
   PlusCircle,
-  AlertTriangle,
   Plus,
+  ClipboardPaste,
 } from "lucide-react";
 
 import { useMenu } from "@/store/hooks/useMenu";
@@ -53,6 +53,9 @@ export function AppSidebar({ ...props }) {
     addSubCategory,
     updateSubCategory,
     deleteSubCategory,
+    copyCategoryToClipboard,
+    pasteCategoryFromClipboard,
+    hasCopiedCategory,
   } = useMenu();
 
   const [addingCategory, setAddingCategory] = useState(false);
@@ -119,13 +122,24 @@ export function AppSidebar({ ...props }) {
               </div>
               
               {!addingCategory && activeView === "MENU" && (
-                <button
-                  onClick={() => setAddingCategory(true)}
-                  className="p-2 rounded-[10px] bg-slate-100/80 hover:bg-slate-200 text-muted-foreground hover:text-foreground shrink-0 border border-border/50 transition-colors shadow-inner group-data-[collapsible=icon]:hidden"
-                  title="Add Category"
-                >
-                  <Plus className="w-4 h-4 shrink-0" />
-                </button>
+                <div className="flex items-center gap-1 shrink-0 group-data-[collapsible=icon]:hidden">
+                  {hasCopiedCategory && (
+                    <button
+                      onClick={pasteCategoryFromClipboard}
+                      className="p-2 rounded-[10px] bg-slate-100/80 hover:bg-slate-200 text-muted-foreground hover:text-foreground border border-border/50 transition-colors shadow-inner"
+                      title="Paste Category"
+                    >
+                      <ClipboardPaste className="w-4 h-4 shrink-0" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setAddingCategory(true)}
+                    className="p-2 rounded-[10px] bg-slate-100/80 hover:bg-slate-200 text-muted-foreground hover:text-foreground border border-border/50 transition-colors shadow-inner"
+                    title="Add Category"
+                  >
+                    <Plus className="w-4 h-4 shrink-0" />
+                  </button>
+                </div>
               )}
             </div>
 
@@ -171,6 +185,7 @@ export function AppSidebar({ ...props }) {
                   addSubCategory={addSubCategory}
                   updateSubCategory={updateSubCategory}
                   deleteSubCategory={deleteSubCategory}
+                  copyCategoryToClipboard={copyCategoryToClipboard}
                 />
               ))}
             </div>

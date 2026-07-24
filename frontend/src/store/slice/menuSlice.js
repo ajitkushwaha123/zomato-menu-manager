@@ -62,6 +62,7 @@ const initialState = {
     isSyncing: false,
     imageUploadStatuses: {}, // { [itemId]: 'uploading' | 'approved' | 'rejected' }
     error: null,
+    globalSearchQuery: "",
 };
 
 const menuSlice = createSlice({
@@ -101,6 +102,9 @@ const menuSlice = createSlice({
                 state.imageUploadStatuses[itemId] = status;
             }
         },
+        setGlobalSearchQuery: (state, action) => {
+            state.globalSearchQuery = action.payload;
+        },
         
         clearMenuState: () => initialState,
 
@@ -114,6 +118,13 @@ const menuSlice = createSlice({
                 items: []
             };
             state.menuData.push(newCategory);
+        },
+        insertFullCategory: (state, action) => {
+            if (!Array.isArray(state.menuData)) state.menuData = [];
+            
+            // The payload is the fully formed category object with new temp- IDs generated
+            // We just need to append it.
+            state.menuData.push(action.payload);
         },
         updateCategory: (state, action) => {
             const { categoryId, data } = action.payload;
@@ -736,9 +747,11 @@ export const {
     closeImageSidebar,
     clearMenuState,
     setImageUploadStatus,
+    setGlobalSearchQuery,
     
     // Category actions
     addCategory,
+    insertFullCategory,
     updateCategory,
     deleteCategory,
     addSubCategory,

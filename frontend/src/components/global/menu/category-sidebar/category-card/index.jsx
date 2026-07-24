@@ -22,6 +22,7 @@ export default function CategoryCard({
     addSubCategory,
     updateSubCategory,
     deleteSubCategory,
+    copyCategoryToClipboard,
 }) {
     // Local transient UI states
     const [isEditing, setIsEditing] = useState(false);
@@ -112,6 +113,7 @@ export default function CategoryCard({
                             triggerClassName="h-7 w-7 shrink-0 rounded-lg opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100"
                             onRename={() => setIsEditing(true)}
                             onDelete={() => deleteCategory?.(category.id)}
+                            onCopy={copyCategoryToClipboard ? () => copyCategoryToClipboard(category.raw || category) : undefined}
                         />
                     </>
                 )}

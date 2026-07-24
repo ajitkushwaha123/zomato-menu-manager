@@ -1,9 +1,11 @@
 "use client";
+import React, { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
     UtensilsCrossed,
 } from "lucide-react";
 import MenuItemRow from "../menu-item-card";
+import { useMenu } from "@/store/hooks/useMenu";
 
 export default function MenuItemList({
     activeSubCategoryData,
@@ -11,6 +13,34 @@ export default function MenuItemList({
     updateCatalogue,
     deleteItem,
 }) {
+    const { globalSearchQuery, menuData } = useMenu();
+
+    const itemsToSearch = useMemo(() => {
+        if (!globalSearchQuery?.trim() || !menuData) return [];
+        const items = [];
+        menuData.forEach(cat => {
+            if (cat.status === 'delete' || cat.status === 'deleted') return;
+            (cat.sub_category || []).forEach(sub => {
+                if (sub.status === 'delete' || sub.status === 'deleted') return;
+                (sub.items || []).forEach(item => {
+                    if (item.status === 'delete' || item.status === 'deleted') return;
+                    items.push(item);
+                });
+            });
+        });
+        return items;
+    }, [menuData, globalSearchQuery]);
+
+    const duplicateNames = (activeSubCategoryData?.items || []).reduce((acc, item) => {
+        if (item.name && item.status !== 'delete' && item.status !== 'deleted') {
+            const name = item.name.toLowerCase().trim();
+            acc.counts[name] = (acc.counts[name] || 0) + 1;
+            if (acc.counts[name] > 1) {
+                acc.duplicates.add(name);
+            }
+        }
+        return acc;
+    }, { counts: {}, duplicates: new Set() }).duplicates;
 
     const handleAddItem = () => {
         if (!activeSubCategoryData?.id) return;
@@ -31,27 +61,50 @@ export default function MenuItemList({
     return (
         <div className="flex h-full flex-1 flex-col border-x bg-background/50 backdrop-blur-xl relative">
             <div className="flex-1 overflow-y-auto p-3">
-                {!activeSubCategoryData ? (
+                {(!activeSubCategoryData && !globalSearchQuery?.trim()) ? (
                     <div className="flex h-full items-center justify-center text-muted-foreground">
                         Select a subcategory to view items.
                     </div>
                 ) : (() => {
-                    const visibleItems = activeSubCategoryData.items?.filter(item => item.status !== 'delete' && item.status !== 'deleted') || [];
+                    let visibleItems = [];
+                    const isSearching = globalSearchQuery?.trim().length > 0;
+                    
+                    if (isSearching) {
+                        const lowerQ = globalSearchQuery.toLowerCase();
+                        visibleItems = itemsToSearch.filter(item => 
+                            (item.name || "").toLowerCase().includes(lowerQ) || 
+                            (item.description || "").toLowerCase().includes(lowerQ)
+                        );
+                    } else {
+                        visibleItems = activeSubCategoryData?.items?.filter(item => item.status !== 'delete' && item.status !== 'deleted') || [];
+                    }
+
                     if (visibleItems.length === 0) {
                         return (
-                            <div className="flex h-full items-center justify-center text-muted-foreground">
-                                No items found. Click <b className="mx-1">Add Item</b> to create
-                                one.
+                            <div className="flex h-full flex-col gap-2 items-center justify-center text-muted-foreground">
+                                {isSearching ? (
+                                    <>No items match your search.</>
+                                ) : (
+                                    <>No items found. Click <b className="mx-1">Add Item</b> to create one.</>
+                                )}
                             </div>
                         );
                     }
                     return (
                         <div className="space-y-4 pb-20">
                             {[...visibleItems]
+                                .sort((a, b) => {
+                                    const aIsDup = a.name && duplicateNames.has(a.name.toLowerCase().trim());
+                                    const bIsDup = b.name && duplicateNames.has(b.name.toLowerCase().trim());
+                                    if (aIsDup && !bIsDup) return -1;
+                                    if (!aIsDup && bIsDup) return 1;
+                                    return (a.name || "").localeCompare(b.name || "");
+                                })
                                 .map((item) => (
                                     <MenuItemRow
                                         key={item.id}
                                         item={item}
+                                        isDuplicate={item.name && duplicateNames.has(item.name.toLowerCase().trim())}
                                         onChange={(updatedItem) =>
                                             updateCatalogue(item.id, updatedItem)
                                         }
@@ -65,7 +118,7 @@ export default function MenuItemList({
                 })()}
             </div>
 
-            {activeSubCategoryData && (
+            {activeSubCategoryData && !globalSearchQuery?.trim() && (
                 <Button
                     onClick={handleAddItem}
                     className="absolute bottom-6 right-6 h-12 rounded-full px-6 shadow-xl shadow-primary/20 gap-2 z-10"

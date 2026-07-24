@@ -8,6 +8,7 @@ import {
     setActiveCategory as setGlobalCategory,
     setActiveSubCategory as setGlobalSubCategory,
     addCategory as dispatchAddCategory,
+    insertFullCategory as dispatchInsertFullCategory,
     updateCategory as dispatchUpdateCategory,
     deleteCategory as dispatchDeleteCategory,
     addSubCategory as dispatchAddSubCategory,
@@ -27,6 +28,7 @@ import {
     deleteAddonOption as dispatchDeleteAddonOption,
     toggleItemAddon as dispatchToggleItemAddon,
     bulkToggleAddon as dispatchBulkToggleAddon,
+    setGlobalSearchQuery as dispatchSetGlobalSearchQuery,
 } from '../slice/menuSlice';
 
 export const useMenu = () => {
@@ -44,7 +46,8 @@ export const useMenu = () => {
         loading,
         isSaving,
         isSyncing,
-        error
+        error,
+        globalSearchQuery
     } = useSelector((state) => state.menu);
 
     const getMenuByResId = useCallback((resId) => {
@@ -61,6 +64,7 @@ export const useMenu = () => {
     const setActiveBulkMode = useCallback((mode) => dispatch(setGlobalBulkMode(mode)), [dispatch]);
     const setActiveCategory = useCallback((catId) => dispatch(setGlobalCategory(catId)), [dispatch]);
     const setActiveSubCategory = useCallback((subCatId) => dispatch(setGlobalSubCategory(subCatId)), [dispatch]);
+    const setGlobalSearchQuery = useCallback((query) => dispatch(dispatchSetGlobalSearchQuery(query)), [dispatch]);
 
     const addCategory = useCallback((name) => {
         dispatch(dispatchAddCategory(name));
@@ -86,6 +90,52 @@ export const useMenu = () => {
         dispatch(dispatchDeleteSubCategory(subCategoryId));
     }, [dispatch]);
 
+    const copyCategoryToClipboard = useCallback((category) => {
+        try {
+            const cleanObj = (obj) => {
+                if (!obj) return obj;
+                const newObj = { ...obj };
+                delete newObj.status;
+                if (newObj.sub_category) newObj.sub_category = newObj.sub_category.map(cleanObj);
+                if (newObj.items) newObj.items = newObj.items.map(cleanObj);
+                if (newObj.variants) newObj.variants = newObj.variants.map(cleanObj);
+                return newObj;
+            };
+            const cleanedCategory = cleanObj(category);
+            localStorage.setItem('menuManager_copiedCategory', JSON.stringify(cleanedCategory));
+            return true;
+        } catch (err) {
+            console.error('Failed to copy category', err);
+            return false;
+        }
+    }, []);
+
+    const pasteCategoryFromClipboard = useCallback(() => {
+        try {
+            const dataStr = localStorage.getItem('menuManager_copiedCategory');
+            if (!dataStr) return false;
+            const categoryData = JSON.parse(dataStr);
+            
+            const remapIds = (obj) => {
+                if (!obj) return obj;
+                const newObj = { ...obj, id: 'temp-' + crypto.randomUUID() };
+                if (newObj.sub_category) newObj.sub_category = newObj.sub_category.map(remapIds);
+                if (newObj.items) newObj.items = newObj.items.map(remapIds);
+                if (newObj.variants) newObj.variants = newObj.variants.map(remapIds);
+                return newObj;
+            };
+            
+            const newlyIdMappedCategory = remapIds(categoryData);
+            dispatch(dispatchInsertFullCategory(newlyIdMappedCategory));
+            return true;
+        } catch (err) {
+            console.error('Failed to paste category', err);
+            return false;
+        }
+    }, [dispatch]);
+
+    const hasCopiedCategory = typeof window !== 'undefined' && !!localStorage.getItem('menuManager_copiedCategory');
+
     return {
         // Data States
         menuData,
@@ -107,11 +157,16 @@ export const useMenu = () => {
         setActiveBulkMode,
         setActiveCategory,
         setActiveSubCategory,
+        globalSearchQuery,
+        setGlobalSearchQuery,
 
         // Menu Modifiers (CRUD)
         addCategory,
         updateCategory,
         deleteCategory,
+        copyCategoryToClipboard,
+        pasteCategoryFromClipboard,
+        hasCopiedCategory,
         addSubCategory,
         updateSubCategory,
         deleteSubCategory,

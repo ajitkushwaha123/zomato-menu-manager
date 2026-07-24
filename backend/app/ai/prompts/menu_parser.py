@@ -32,11 +32,17 @@ Rules
 8. Every variant must contain
    at least two options.
 
-9. Ensure NO duplicate items are returned. Deduplicate them.
+9. WEEKLY / DAILY MENU RULES - CRITICAL:
+   If the menu contains sections based on days of the week (e.g., "Weekly Specials" with "Monday", "Tuesday", etc.):
+   - The Category should be "Weekly Specials" (or the main heading).
+   - The Subcategories MUST be the days of the week (e.g., "Monday", "Tuesday", "Wednesday", etc.).
+   - Place the respective items under their day. It is perfectly fine if the same item appears multiple times under different days (allow duplicacy). DO NOT deduplicate items if they appear under different days of the week.
 
-9. Preserve prices exactly.
+10. Ensure NO duplicate items are returned within the SAME subcategory. Deduplicate them.
 
-10. NAME FORMATTING — CRITICAL:
+11. Preserve prices exactly.
+
+12. NAME FORMATTING — CRITICAL:
     Item names MUST follow natural ingredient-first order. The primary ingredient or protein comes FIRST.
     - If the menu shows "Lemongrass Special Salad (Paneer)", name it "Paneer Lemongrass Special Salad"
     - If the menu shows "Butter Masala (Chicken)", name it "Chicken Butter Masala"

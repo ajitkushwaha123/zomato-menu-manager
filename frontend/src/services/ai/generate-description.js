@@ -44,11 +44,12 @@ RULES
 1. Preserve item_id EXACTLY.
 2. Preserve name EXACTLY.
 3. Description must be one sentence.
-4. 8-20 words.
+4. 8-20 words,
 5. Natural and appetizing.
 6. Never mention price.
 7. Never invent variants.
 8. Never skip any item.
+9. never exceeed description more 1.5 line 
 
 Return ONLY minified JSON.
 
